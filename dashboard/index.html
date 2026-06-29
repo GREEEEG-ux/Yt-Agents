@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>yt-shorts-agent</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --accent:#7c5cff; --accent-dim:#7c5cff33; }
+  body { background:#0b0c10; color:#d6d8de; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .mono { font-family:"SF Mono",ui-monospace,Consolas,monospace; }
+  .tab { color:#74798a; border-bottom:2px solid transparent; }
+  .tab.active { color:#f1f2f5; border-bottom:2px solid var(--accent); }
+  .card { background:#13141a; border:1px solid #1f212b; }
+  .card-accent { box-shadow: inset 2px 0 0 0 var(--accent); }
+  .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .dot-ok { background:#3ddc97; }
+  .dot-off { background:#ff5d6c; }
+  .btn-primary { background:var(--accent); color:#0b0c10; }
+  .btn-primary:hover { background:#9277ff; }
+  .row:hover { background:#161821; }
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-thumb { background:#23252f; border-radius:3px; }
+  .icon { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; }
+</style>
+</head>
+<body class="min-h-screen text-[13px]">
+
+  <header class="border-b border-[#1f212b] sticky top-0 z-10 bg-[#0b0c10]/95 backdrop-blur">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-sm bg-[var(--accent)]"></span>
+        <span class="font-semibold tracking-tight text-[15px]">yt-shorts-agent</span>
+      </div>
+      <nav class="flex items-center gap-6">
+        <button data-view="home" class="tab active py-1 px-1">Accueil</button>
+        <button data-view="create" class="tab py-1 px-1">Créer</button>
+        <button data-view="library" class="tab py-1 px-1">Bibliothèque</button>
+        <button data-view="performances" class="tab py-1 px-1">Performances</button>
+        <button data-view="settings" class="tab py-1 px-1">Réglages</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8">
+
+    <!-- ACCUEIL -->
+    <section id="view-home">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-[17px] font-semibold tracking-tight">Aperçu</h1>
+        <button onclick="switchView('create')" class="btn-primary text-xs font-medium px-4 py-2 rounded-md">Nouvelle génération</button>
+      </div>
+      <div id="home-stats" class="grid grid-cols-3 gap-3 mb-8"></div>
+      <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-3">Dernières vidéos</div>
+      <div id="home-recent" class="card rounded-lg divide-y divide-[#1f212b]"></div>
+    </section>
+
+    <!-- CREER -->
+    <section id="view-create" class="hidden max-w-lg">
+      <h1 class="text-[17px] font-semibold tracking-tight mb-6">Nouvelle génération</h1>
+
+      <div class="card card-accent rounded-lg p-5 space-y-4">
+        <div>
+          <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-1.5">Mode</div>
+          <select id="gen-mode" onchange="onModeChange()" class="w-full bg-[#0b0c10] border border-[#262833] rounded-md px-3 py-2 text-[13px]">
+            <option value="free">Sujet libre</option>
+            <option value="topic">Sujet imposé</option>
+            <option value="film">Analyse de film / série</option>
+          </select>
+        </div>
+        <div id="gen-field-topic" class="hidden">
+          <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-1.5">Sujet</div>
+          <input id="gen-topic" type="text" placeholder="Mystères de l'univers" class="w-full bg-[#0b0c10] border border-[#262833] rounded-md px-3 py-2 text-[13px]">
+        </div>
+        <div id="gen-field-film" class="hidden">
+          <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-1.5">Film / série — angle</div>
+          <input id="gen-film" type="text" placeholder="Inception - théorie sur la toupie finale" class="w-full bg-[#0b0c10] border border-[#262833] rounded-md px-3 py-2 text-[13px]">
+        </div>
+        <button onclick="startGeneration()" id="gen-btn" class="btn-primary font-medium px-4 py-2.5 rounded-md w-full text-[13px]">Lancer la génération</button>
+      </div>
+
+      <div id="gen-progress" class="mt-6 hidden">
+        <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-2">Progression</div>
+        <div id="gen-log" class="card rounded-lg p-4 h-52 overflow-y-auto mono text-[12px] space-y-1 text-[#9aa0b4]"></div>
+        <div id="gen-result" class="mt-3"></div>
+      </div>
+    </section>
+
+    <!-- BIBLIOTHEQUE -->
+    <section id="view-library" class="hidden">
+      <h1 class="text-[17px] font-semibold tracking-tight mb-6">Bibliothèque</h1>
+      <div id="library-list" class="card rounded-lg divide-y divide-[#1f212b]"></div>
+    </section>
+
+    <!-- PERFORMANCES -->
+    <section id="view-performances" class="hidden">
+      <h1 class="text-[17px] font-semibold tracking-tight mb-6">Performances</h1>
+      <div id="perf-totals" class="grid grid-cols-3 gap-3 mb-8"></div>
+      <div id="perf-list" class="card rounded-lg divide-y divide-[#1f212b]"></div>
+    </section>
+
+    <!-- REGLAGES -->
+    <section id="view-settings" class="hidden max-w-lg">
+      <h1 class="text-[17px] font-semibold tracking-tight mb-6">Réglages</h1>
+      <div id="settings-status" class="card rounded-lg divide-y divide-[#1f212b]"></div>
+    </section>
+
+  </main>
+
+<script>
+const API = "";
+
+function switchView(view) {
+  document.querySelectorAll("[id^='view-']").forEach(el => el.classList.add("hidden"));
+  document.getElementById("view-" + view).classList.remove("hidden");
+  document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+  document.querySelector(`[data-view="${view}"]`).classList.add("active");
+
+  if (view === "home") loadHome();
+  if (view === "library") loadLibrary();
+  if (view === "performances") loadPerformances();
+  if (view === "settings") loadSettings();
+}
+
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => switchView(btn.dataset.view));
+});
+
+function onModeChange() {
+  const mode = document.getElementById("gen-mode").value;
+  document.getElementById("gen-field-topic").classList.toggle("hidden", mode !== "topic");
+  document.getElementById("gen-field-film").classList.toggle("hidden", mode !== "film");
+}
+
+function statCard(label, value) {
+  return `
+    <div class="card rounded-lg p-4">
+      <div class="text-[11px] uppercase tracking-wider text-[#5d6173] mb-1">${label}</div>
+      <div class="text-2xl font-semibold mono">${value}</div>
+    </div>`;
+}
+
+function rowItem({ title, subtitle, videoId, actions = "" }) {
+  return `
+    <div class="row flex items-center justify-between px-4 py-3">
+      <div class="min-w-0">
+        <div class="font-medium truncate">${title}</div>
+        <div class="text-[#5d6173] text-[12px] truncate">${subtitle}</div>
+      </div>
+      <div class="flex items-center gap-3 shrink-0 ml-4">
+        ${videoId ? `<a href="https://youtu.be/${videoId}" target="_blank" class="text-[var(--accent)] hover:underline text-[12px]">Voir</a>` : ""}
+        ${actions}
+      </div>
+    </div>`;
+}
+
+async function loadHome() {
+  const history = await fetch(API + "/api/history").then(r => r.json());
+  document.getElementById("home-stats").innerHTML = statCard("Vidéos générées", history.length);
+  document.getElementById("home-recent").innerHTML = history.slice(0, 5).map(entry => rowItem({
+    title: entry.title,
+    subtitle: `${entry.topic} · ${new Date(entry.date).toLocaleString("fr-FR")}`,
+    videoId: entry.video_id,
+  })).join("") || `<div class="px-4 py-6 text-[#5d6173] text-center">Aucune vidéo encore.</div>`;
+}
+
+async function loadLibrary() {
+  const history = await fetch(API + "/api/history").then(r => r.json());
+  document.getElementById("library-list").innerHTML = history.map(entry => rowItem({
+    title: entry.title,
+    subtitle: `${entry.topic} · ${new Date(entry.date).toLocaleString("fr-FR")}`,
+    videoId: entry.video_id,
+    actions: `
+      <button onclick="publishVideo('${entry.video_id}')" class="text-[12px] border border-[#262833] hover:border-[#3ddc97] hover:text-[#3ddc97] px-3 py-1.5 rounded-md">Rendre public</button>
+      <button onclick="deleteEntry('${entry.video_id}')" class="text-[12px] border border-[#262833] hover:border-[#ff5d6c] hover:text-[#ff5d6c] px-3 py-1.5 rounded-md">Supprimer</button>`
+  })).join("") || `<div class="px-4 py-6 text-[#5d6173] text-center">Aucune vidéo encore.</div>`;
+}
+
+async function publishVideo(videoId) {
+  if (!confirm("Rendre cette vidéo PUBLIQUE sur YouTube ? Cette action est visible par tout le monde.")) return;
+  await fetch(API + "/api/publish", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({video_id: videoId, privacy_status: "public"})
+  });
+  loadLibrary();
+}
+
+async function deleteEntry(videoId) {
+  if (!confirm("Supprimer cette entrée de l'historique ? (la vidéo YouTube n'est pas supprimée)")) return;
+  await fetch(API + "/api/history/" + videoId, {method: "DELETE"});
+  loadLibrary();
+}
+
+async function loadPerformances() {
+  const data = await fetch(API + "/api/stats").then(r => r.json());
+  document.getElementById("perf-totals").innerHTML =
+    statCard("Vidéos", data.totals.videos) +
+    statCard("Vues totales", data.totals.views) +
+    statCard("Likes totaux", data.totals.likes);
+  document.getElementById("perf-list").innerHTML = data.videos.map(v => rowItem({
+    title: v.title,
+    subtitle: `${v.privacyStatus || "—"} · ${new Date(v.date).toLocaleDateString("fr-FR")}`,
+    actions: `<div class="mono text-[12px] text-[#9aa0b4]">${v.viewCount ?? "—"} vues · ${v.likeCount ?? "—"} likes</div>`
+  })).join("") || `<div class="px-4 py-6 text-[#5d6173] text-center">Aucune donnée.</div>`;
+}
+
+async function loadSettings() {
+  const status = await fetch(API + "/api/config/status").then(r => r.json());
+  const labels = {
+    groq: "Clé Groq (script IA)",
+    pexels: "Clé Pexels (vidéos libres)",
+    pixabay: "Clé Pixabay (vidéos libres)",
+    piper_exe: "Piper TTS installé",
+    piper_voice: "Modèle de voix Piper",
+    ffmpeg: "FFmpeg détecté",
+    client_secret: "OAuth YouTube configuré",
+    token: "Connexion YouTube active",
+  };
+  document.getElementById("settings-status").innerHTML = Object.entries(labels).map(([key, label]) => `
+    <div class="flex items-center justify-between px-4 py-3">
+      <span>${label}</span>
+      <span class="flex items-center gap-2 text-[12px] ${status[key] ? "text-[#3ddc97]" : "text-[#ff5d6c]"}">
+        <span class="dot ${status[key] ? "dot-ok" : "dot-off"}"></span>${status[key] ? "Connecté" : "Manquant"}
+      </span>
+    </div>`).join("");
+}
+
+function logLine(text) {
+  const log = document.getElementById("gen-log");
+  const line = document.createElement("div");
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function startGeneration() {
+  const mode = document.getElementById("gen-mode").value;
+  const topic = document.getElementById("gen-topic").value;
+  const film = document.getElementById("gen-film").value;
+
+  document.getElementById("gen-btn").disabled = true;
+  document.getElementById("gen-progress").classList.remove("hidden");
+  document.getElementById("gen-log").innerHTML = "";
+  document.getElementById("gen-result").innerHTML = "";
+
+  const res = await fetch(API + "/api/generate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({mode, topic, film})
+  }).then(r => r.json());
+
+  const ws = new WebSocket(`ws://${location.host}/ws/jobs/${res.job_id}`);
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "progress") {
+      logLine(data.message);
+    } else if (data.type === "done") {
+      logLine("Terminé.");
+      document.getElementById("gen-result").innerHTML = `
+        <a href="https://youtu.be/${data.result.video_id}" target="_blank" class="text-[var(--accent)] hover:underline text-[13px]">Voir la vidéo sur YouTube →</a>`;
+      document.getElementById("gen-btn").disabled = false;
+    } else if (data.type === "skipped") {
+      logLine(data.message);
+      document.getElementById("gen-btn").disabled = false;
+    } else if (data.type === "error") {
+      logLine("Erreur : " + data.message);
+      document.getElementById("gen-btn").disabled = false;
+    }
+  };
+}
+
+loadHome();
+</script>
+</body>
+</html>
