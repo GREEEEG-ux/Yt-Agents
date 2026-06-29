@@ -21,6 +21,8 @@ export type ConfigStatus = {
   groq: boolean;
   pexels: boolean;
   pixabay: boolean;
+  assemblyai: boolean;
+  deepgram: boolean;
   piper_exe: boolean;
   piper_voice: boolean;
   ffmpeg: boolean;
@@ -33,6 +35,8 @@ export type GenerateMode = "free" | "topic" | "film" | "clip";
 export type ClipMode = "manual" | "speech" | "first";
 export type VideoFormat = "short" | "video";
 export type Language = "fr" | "en";
+export type TranscriptionEngine = "whisper" | "assemblyai" | "deepgram";
+export type VideoQuality = "best" | "1080" | "720" | "480" | "360";
 
 export type GenerateRequest = {
   mode: GenerateMode;
@@ -48,11 +52,13 @@ export type GenerateRequest = {
   voice_enabled?: boolean;
   language?: Language;
   transcription_enabled?: boolean;
+  transcription_engine?: TranscriptionEngine;
   video_format?: VideoFormat;
+  video_quality?: VideoQuality;
 };
 
 export type JobMessage =
-  | { type: "progress"; message: string }
+  | { type: "progress"; message: string; percent?: number }
   | { type: "done"; result: { video_id: string; topic: string; title: string } }
   | { type: "skipped"; message: string }
   | { type: "error"; message: string };

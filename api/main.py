@@ -38,7 +38,9 @@ class GenerateRequest(BaseModel):
     voice_enabled: bool = True
     language: str = "fr"
     transcription_enabled: bool = False
+    transcription_engine: str = "whisper"
     video_format: str = "short"
+    video_quality: str = "best"
 
 
 class PublishRequest(BaseModel):
@@ -68,6 +70,8 @@ def get_config_status():
         "groq": bool(config.GROQ_API_KEY),
         "pexels": bool(config.PEXELS_API_KEY),
         "pixabay": bool(config.PIXABAY_API_KEY),
+        "assemblyai": bool(config.ASSEMBLYAI_API_KEY),
+        "deepgram": bool(config.DEEPGRAM_API_KEY),
         "piper_exe": os.path.exists(config.PIPER_EXE),
         "piper_voice": os.path.exists(config.PIPER_VOICE_MODEL),
         "ffmpeg": shutil.which("ffmpeg") is not None,
@@ -94,7 +98,9 @@ def generate(req: GenerateRequest):
         voice_enabled=req.voice_enabled,
         language=req.language,
         transcription_enabled=req.transcription_enabled,
+        transcription_engine=req.transcription_engine,
         video_format=req.video_format,
+        video_quality=req.video_quality,
     )
     return {"job_id": job_id}
 

@@ -61,11 +61,15 @@ def run_from_clip(
     script_text=None,
     topic_for_script=None,
     transcription_enabled=False,
+    transcription_engine="whisper",
     video_format="short",
+    video_quality="best",
     on_progress=print,
 ):
     on_progress("1/7 - Vérification de la source...")
-    source_path = source_agent.validate_and_fetch(url=source_url, file_path=file_path, mine=mine)
+    source_path = source_agent.validate_and_fetch(
+        url=source_url, file_path=file_path, mine=mine, quality=video_quality
+    )
 
     on_progress("2/7 - Découpage du clip...")
     clip_path = clip_agent.extract_clip(
@@ -92,8 +96,10 @@ def run_from_clip(
         on_progress("3/7 - Sous-titres / métadonnées...")
         transcript_text = ""
         if transcription_enabled:
-            on_progress("Transcription de l'audio du clip...")
-            timed_segments = transcription_agent.transcribe(clip_path, language=language)
+            on_progress(f"Transcription de l'audio du clip ({transcription_engine})...")
+            timed_segments = transcription_agent.transcribe(
+                clip_path, language=language, engine=transcription_engine
+            )
             transcript_text = " ".join(s["text"] for s in timed_segments)
 
         basis = transcript_text or topic_for_script or "Clip vidéo"

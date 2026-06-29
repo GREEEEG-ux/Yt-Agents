@@ -1,10 +1,24 @@
 import queue
+import re
 import threading
 import uuid
 
 import main as pipeline
 
 _jobs = {}
+
+_STEP_RE = re.compile(r"^(\d+)\s*/\s*(\d+)")
+
+
+def _percent_from_message(message):
+    """Déduit un pourcentage à partir d'un préfixe 'X/Y' dans le message, sinon None."""
+    m = _STEP_RE.match(message.strip())
+    if not m:
+        return None
+    current, total = int(m.group(1)), int(m.group(2))
+    if total <= 0:
+        return None
+    return round(current / total * 100)
 
 
 def start_generation(
@@ -21,14 +35,20 @@ def start_generation(
     voice_enabled=True,
     language="fr",
     transcription_enabled=False,
+    transcription_engine="whisper",
     video_format="short",
+    video_quality="best",
 ):
     job_id = str(uuid.uuid4())
     q = queue.Queue()
     _jobs[job_id] = q
 
     def on_progress(message):
-        q.put({"type": "progress", "message": message})
+        event = {"type": "progress", "message": message}
+        percent = _percent_from_message(message)
+        if percent is not None:
+            event["percent"] = percent
+        q.put(event)
 
     def worker():
         try:
@@ -49,7 +69,9 @@ def start_generation(
                     script_text=script_text,
                     topic_for_script=topic,
                     transcription_enabled=transcription_enabled,
+                    transcription_engine=transcription_engine,
                     video_format=video_format,
+                    video_quality=video_quality,
                     on_progress=on_progress,
                 )
             else:

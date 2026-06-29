@@ -52,11 +52,20 @@ def check_creative_commons(url):
         )
 
 
-def download_via_ytdlp(url):
+def download_via_ytdlp(url, quality="best"):
+    """quality : 'best', '1080', '720', '480' ou '360' (hauteur max en pixels)."""
     output_path = os.path.join(config.VIDEOS_DIR, "manual_source.mp4")
+    if quality and quality != "best":
+        height = int(quality)
+        fmt = (
+            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"best[height<={height}][ext=mp4]/best[height<={height}]/best"
+        )
+    else:
+        fmt = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
     ydl_opts = {
         "outtmpl": output_path,
-        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        "format": fmt,
         "merge_output_format": "mp4",
         "quiet": True,
     }

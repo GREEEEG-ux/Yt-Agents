@@ -7,6 +7,8 @@ const LABELS: Record<keyof ConfigStatus, string> = {
   groq: "Clé Groq (script IA)",
   pexels: "Clé Pexels (vidéos libres)",
   pixabay: "Clé Pixabay (vidéos libres)",
+  assemblyai: "Clé AssemblyAI (transcription)",
+  deepgram: "Clé Deepgram (transcription)",
   piper_exe: "Piper TTS installé",
   piper_voice: "Modèle de voix Piper",
   ffmpeg: "FFmpeg détecté",

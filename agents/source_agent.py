@@ -16,7 +16,7 @@ def _is_direct_file(url):
     return url.lower().split("?")[0].endswith(DIRECT_FILE_EXTENSIONS)
 
 
-def validate_and_fetch(url=None, file_path=None, mine=False):
+def validate_and_fetch(url=None, file_path=None, mine=False, quality="best"):
     """Retourne le chemin local d'une vidéo source, après vérification des droits.
 
     - file_path : fichier local déjà sur disque (vidéo de l'utilisateur), accepté sans vérification.
@@ -24,6 +24,7 @@ def validate_and_fetch(url=None, file_path=None, mine=False):
     - url + domaine autorisé (Pexels/Pixabay/Wikimedia Commons/Internet Archive) : accepté.
     - url + mine=False sur un autre domaine : vérification de licence Creative Commons via yt-dlp,
       rejet si la licence n'est pas explicitement Creative Commons.
+    - quality : 'best'/'1080'/'720'/'480'/'360' pour les téléchargements yt-dlp.
     """
     if file_path:
         if not os.path.exists(file_path):
@@ -41,7 +42,7 @@ def validate_and_fetch(url=None, file_path=None, mine=False):
                 "Colle le lien direct du fichier vidéo (terminant par .mp4), pas la page de la vidéo. "
                 "Sur Pexels/Pixabay, clic droit sur le bouton de téléchargement → 'Copier l'adresse du lien'."
             )
-        return asset_agent.download_via_ytdlp(url)
+        return asset_agent.download_via_ytdlp(url, quality=quality)
 
     if _is_direct_file(url):
         raise ValueError(
@@ -51,4 +52,4 @@ def validate_and_fetch(url=None, file_path=None, mine=False):
         )
 
     asset_agent.check_creative_commons(url)
-    return asset_agent.download_via_ytdlp(url)
+    return asset_agent.download_via_ytdlp(url, quality=quality)
