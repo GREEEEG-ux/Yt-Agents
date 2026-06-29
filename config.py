@@ -24,5 +24,11 @@ for _dir in (DATA_DIR, AUDIO_DIR, VIDEOS_DIR, IMAGES_DIR, FINAL_DIR):
 PIPER_EXE = os.path.join(BASE_DIR, os.getenv("PIPER_EXE", "piper.exe"))
 PIPER_VOICE_MODEL = os.path.join(BASE_DIR, os.getenv("PIPER_VOICE_MODEL", "voice.onnx"))
 
+# Modèles de voix par langue (le défaut fr reste PIPER_VOICE_MODEL pour compat).
+PIPER_VOICES = {
+    "fr": os.path.join(BASE_DIR, os.getenv("PIPER_VOICE_FR", "piper/fr_FR-siwis-medium.onnx")),
+    "en": os.path.join(BASE_DIR, os.getenv("PIPER_VOICE_EN", "piper/en_US-amy-medium.onnx")),
+}
+
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920

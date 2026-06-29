@@ -32,8 +32,14 @@ def get_authenticated_service():
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
 
-def upload_video(video_path, title, description, tags):
+def upload_video(video_path, title, description, tags, as_short=True):
     youtube = get_authenticated_service()
+
+    if as_short:
+        if "#shorts" not in description.lower():
+            description = f"{description}\n\n#Shorts"
+        if "shorts" not in [t.lower() for t in tags]:
+            tags = [*tags, "Shorts"]
 
     body = {
         "snippet": {

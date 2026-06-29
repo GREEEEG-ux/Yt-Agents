@@ -7,7 +7,22 @@ import main as pipeline
 _jobs = {}
 
 
-def start_generation(mode, topic=None, film=None, source_url=None, file_path=None, mine=False, script_text=None):
+def start_generation(
+    mode,
+    topic=None,
+    film=None,
+    source_url=None,
+    file_path=None,
+    mine=False,
+    script_text=None,
+    clip_mode="manual",
+    clip_start=0.0,
+    clip_duration=30.0,
+    voice_enabled=True,
+    language="fr",
+    transcription_enabled=False,
+    video_format="short",
+):
     job_id = str(uuid.uuid4())
     q = queue.Queue()
     _jobs[job_id] = q
@@ -26,8 +41,15 @@ def start_generation(mode, topic=None, film=None, source_url=None, file_path=Non
                     source_url=source_url,
                     file_path=file_path,
                     mine=mine,
+                    clip_mode=clip_mode,
+                    clip_start=clip_start,
+                    clip_duration=clip_duration,
+                    voice_enabled=voice_enabled,
+                    language=language,
                     script_text=script_text,
                     topic_for_script=topic,
+                    transcription_enabled=transcription_enabled,
+                    video_format=video_format,
                     on_progress=on_progress,
                 )
             else:

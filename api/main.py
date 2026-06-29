@@ -32,6 +32,13 @@ class GenerateRequest(BaseModel):
     file_path: str | None = None
     mine: bool = False
     script_text: str | None = None
+    clip_mode: str = "manual"
+    clip_start: float = 0.0
+    clip_duration: float = 30.0
+    voice_enabled: bool = True
+    language: str = "fr"
+    transcription_enabled: bool = False
+    video_format: str = "short"
 
 
 class PublishRequest(BaseModel):
@@ -81,6 +88,13 @@ def generate(req: GenerateRequest):
         file_path=req.file_path,
         mine=req.mine,
         script_text=req.script_text,
+        clip_mode=req.clip_mode,
+        clip_start=req.clip_start,
+        clip_duration=req.clip_duration,
+        voice_enabled=req.voice_enabled,
+        language=req.language,
+        transcription_enabled=req.transcription_enabled,
+        video_format=req.video_format,
     )
     return {"job_id": job_id}
 

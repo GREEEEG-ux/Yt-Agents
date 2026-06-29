@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -12,20 +13,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api, type GenerateMode, type JobMessage } from "@/lib/api";
+import {
+  api,
+  type GenerateMode,
+  type JobMessage,
+  type ClipMode,
+  type VideoFormat,
+  type Language,
+} from "@/lib/api";
 
 type ScriptMode = "manual" | "ai";
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+      {children}
+    </Label>
+  );
+}
 
 export function Create() {
   const [mode, setMode] = useState<GenerateMode>("free");
   const [topic, setTopic] = useState("");
   const [film, setFilm] = useState("");
 
+  // Mode clip
   const [clipUrl, setClipUrl] = useState("");
   const [clipMine, setClipMine] = useState(false);
+  const [clipMode, setClipMode] = useState<ClipMode>("manual");
+  const [clipStart, setClipStart] = useState(0);
+  const [clipDuration, setClipDuration] = useState(30);
+  const [videoFormat, setVideoFormat] = useState<VideoFormat>("short");
+
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [language, setLanguage] = useState<Language>("fr");
   const [scriptMode, setScriptMode] = useState<ScriptMode>("manual");
   const [scriptText, setScriptText] = useState("");
   const [scriptTopic, setScriptTopic] = useState("");
+  const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [busy, setBusy] = useState(false);
@@ -57,8 +83,15 @@ export function Create() {
         source_url: clipUrl || null,
         file_path: filePath,
         mine: clipMine,
-        script_text: scriptMode === "manual" ? scriptText : null,
-        topic: scriptMode === "ai" ? scriptTopic : null,
+        clip_mode: clipMode,
+        clip_start: clipStart,
+        clip_duration: clipDuration,
+        video_format: videoFormat,
+        voice_enabled: voiceEnabled,
+        language,
+        transcription_enabled: !voiceEnabled && transcriptionEnabled,
+        script_text: voiceEnabled && scriptMode === "manual" ? scriptText : null,
+        topic: voiceEnabled && scriptMode === "ai" ? scriptTopic : null,
       };
     }
 
@@ -87,9 +120,7 @@ export function Create() {
 
       <Card className="p-5 gap-4 border-l-2 border-l-primary">
         <div className="space-y-1.5">
-          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Mode
-          </Label>
+          <FieldLabel>Mode</FieldLabel>
           <Select value={mode} onValueChange={(v) => setMode(v as GenerateMode)}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -98,16 +129,14 @@ export function Create() {
               <SelectItem value="free">Sujet libre</SelectItem>
               <SelectItem value="topic">Sujet imposé</SelectItem>
               <SelectItem value="film">Analyse de film / série</SelectItem>
-              <SelectItem value="clip">Depuis un lien ou un fichier vidéo</SelectItem>
+              <SelectItem value="clip">Auto-clip depuis un lien / fichier</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {mode === "topic" && (
           <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Sujet
-            </Label>
+            <FieldLabel>Sujet</FieldLabel>
             <Input
               placeholder="Mystères de l'univers"
               value={topic}
@@ -118,9 +147,7 @@ export function Create() {
 
         {mode === "film" && (
           <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Film / série — angle
-            </Label>
+            <FieldLabel>Film / série — angle</FieldLabel>
             <Input
               placeholder="Inception - théorie sur la toupie finale"
               value={film}
@@ -130,11 +157,10 @@ export function Create() {
         )}
 
         {mode === "clip" && (
-          <div className="space-y-4 border-t pt-4">
+          <div className="space-y-5 border-t pt-4">
+            {/* Source */}
             <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Lien vidéo
-              </Label>
+              <FieldLabel>Lien vidéo</FieldLabel>
               <Input
                 placeholder="https://..."
                 value={clipUrl}
@@ -145,19 +171,10 @@ export function Create() {
                 Cette vidéo m'appartient
               </label>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Sinon, seules les sources autorisées sont acceptées : Wikimedia Commons,
-                Internet Archive, licence Creative Commons vérifiable, ou lien direct .mp4
-                (Pexels/Pixabay — clic droit sur le bouton de téléchargement → copier
-                l'adresse du lien).
+                Sinon : Wikimedia Commons, Internet Archive, licence Creative Commons
+                vérifiable, ou lien direct .mp4 (Pexels/Pixabay).
               </p>
-            </div>
-
-            <div className="text-center text-[11px] text-muted-foreground">— ou —</div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Importer un fichier local
-              </Label>
+              <div className="text-center text-[11px] text-muted-foreground my-2">— ou —</div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -166,34 +183,116 @@ export function Create() {
               />
             </div>
 
+            {/* Découpage */}
             <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Script
-              </Label>
-              <Select value={scriptMode} onValueChange={(v) => setScriptMode(v as ScriptMode)}>
-                <SelectTrigger className="w-full mb-2">
+              <FieldLabel>Découpage du clip</FieldLabel>
+              <Select value={clipMode} onValueChange={(v) => setClipMode(v as ClipMode)}>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="manual">Écrire le script moi-même</SelectItem>
-                  <SelectItem value="ai">Générer avec l'IA à partir d'un sujet</SelectItem>
+                  <SelectItem value="manual">Horodatage manuel (précis)</SelectItem>
+                  <SelectItem value="speech">Auto — meilleur passage parlé</SelectItem>
+                  <SelectItem value="first">Premières secondes</SelectItem>
                 </SelectContent>
               </Select>
-              {scriptMode === "manual" ? (
-                <Textarea
-                  rows={4}
-                  placeholder="Ton script de voix off..."
-                  value={scriptText}
-                  onChange={(e) => setScriptText(e.target.value)}
-                />
-              ) : (
-                <Input
-                  placeholder="Sujet pour la génération IA"
-                  value={scriptTopic}
-                  onChange={(e) => setScriptTopic(e.target.value)}
-                />
-              )}
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                {clipMode === "manual" && (
+                  <div className="space-y-1">
+                    <FieldLabel>Début (sec)</FieldLabel>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={clipStart}
+                      onChange={(e) => setClipStart(Number(e.target.value))}
+                    />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <FieldLabel>Durée (sec)</FieldLabel>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={180}
+                    value={clipDuration}
+                    onChange={(e) => setClipDuration(Number(e.target.value))}
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Format de sortie */}
+            <div className="space-y-1.5">
+              <FieldLabel>Format de publication</FieldLabel>
+              <Select value={videoFormat} onValueChange={(v) => setVideoFormat(v as VideoFormat)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="short">YouTube Short (9:16 vertical)</SelectItem>
+                  <SelectItem value="video">Vidéo YouTube classique (format d'origine)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Voix off */}
+            <div className="flex items-center justify-between">
+              <FieldLabel>Voix off IA</FieldLabel>
+              <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} />
+            </div>
+
+            {voiceEnabled ? (
+              <div className="space-y-4 pl-3 border-l border-border">
+                <div className="space-y-1.5">
+                  <FieldLabel>Langue de la voix</FieldLabel>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="en">Anglais</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <FieldLabel>Script</FieldLabel>
+                  <Select value={scriptMode} onValueChange={(v) => setScriptMode(v as ScriptMode)}>
+                    <SelectTrigger className="w-full mb-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Écrire le script moi-même</SelectItem>
+                      <SelectItem value="ai">Générer avec l'IA à partir d'un sujet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {scriptMode === "manual" ? (
+                    <Textarea
+                      rows={4}
+                      placeholder="Ton script de voix off..."
+                      value={scriptText}
+                      onChange={(e) => setScriptText(e.target.value)}
+                    />
+                  ) : (
+                    <Input
+                      placeholder="Sujet pour la génération IA"
+                      value={scriptTopic}
+                      onChange={(e) => setScriptTopic(e.target.value)}
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between pl-3 border-l border-border">
+                <div>
+                  <FieldLabel>Sous-titres auto (transcription)</FieldLabel>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Transcrit l'audio d'origine du clip (Whisper).
+                  </p>
+                </div>
+                <Switch checked={transcriptionEnabled} onCheckedChange={setTranscriptionEnabled} />
+              </div>
+            )}
           </div>
         )}
 

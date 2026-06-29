@@ -30,6 +30,10 @@ export type ConfigStatus = {
 
 export type GenerateMode = "free" | "topic" | "film" | "clip";
 
+export type ClipMode = "manual" | "speech" | "first";
+export type VideoFormat = "short" | "video";
+export type Language = "fr" | "en";
+
 export type GenerateRequest = {
   mode: GenerateMode;
   topic?: string | null;
@@ -38,6 +42,13 @@ export type GenerateRequest = {
   file_path?: string | null;
   mine?: boolean;
   script_text?: string | null;
+  clip_mode?: ClipMode;
+  clip_start?: number;
+  clip_duration?: number;
+  voice_enabled?: boolean;
+  language?: Language;
+  transcription_enabled?: boolean;
+  video_format?: VideoFormat;
 };
 
 export type JobMessage =
