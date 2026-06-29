@@ -133,11 +133,12 @@ export function Create() {
               <Input placeholder="https://..." value={clipUrl} onChange={(e) => setClipUrl(e.target.value)} />
               <label className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                 <Checkbox checked={clipMine} onCheckedChange={(v) => setClipMine(!!v)} />
-                Cette vidéo m'appartient
+                Je confirme avoir les droits d'utiliser cette vidéo
               </label>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Sinon : Wikimedia Commons, Internet Archive, licence Creative Commons vérifiable,
-                ou lien direct .mp4 (Pexels/Pixabay).
+                Coché : n'importe quel lien de n'importe quel site est accepté (YouTube, Vimeo, Twitch…),
+                tu es responsable du respect du droit d'auteur. Décoché : seules les sources libres
+                (Pexels, Pixabay, Wikimedia, Archive.org, ou licence Creative Commons) sont acceptées.
               </p>
               <div className="text-center text-[11px] text-muted-foreground my-2">— ou —</div>
               <input ref={fileInputRef} type="file" accept="video/*" className="w-full text-xs text-muted-foreground" />
