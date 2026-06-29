@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useJob } from "@/lib/JobContext";
+import { SubtitlePreview } from "@/components/SubtitlePreview";
 import {
   type GenerateMode,
   type GenerateRequest,
@@ -22,6 +23,7 @@ import {
   type Language,
   type TranscriptionEngine,
   type VideoQuality,
+  type SubtitleMode,
 } from "@/lib/api";
 
 type ScriptMode = "manual" | "ai";
@@ -57,12 +59,25 @@ export function Create() {
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
   const [engine, setEngine] = useState<TranscriptionEngine>("whisper");
 
+  // Sous-titres
+  const [subSize, setSubSize] = useState(64);
+  const [subColor, setSubColor] = useState("#FFFFFF");
+  const [subMode, setSubMode] = useState<SubtitleMode>("sentence");
+  const [subMaxWords, setSubMaxWords] = useState(6);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const running = job.status === "running";
 
+  const subtitleFields = {
+    subtitle_size: subSize,
+    subtitle_color: subColor,
+    subtitle_mode: subMode,
+    subtitle_max_words: subMaxWords,
+  };
+
   async function startGeneration() {
-    let req: GenerateRequest = { mode, topic, film };
+    let req: GenerateRequest = { mode, topic, film, ...subtitleFields };
     let file: File | null = null;
 
     if (mode === "clip") {
@@ -82,6 +97,7 @@ export function Create() {
         transcription_engine: engine,
         script_text: voiceEnabled && scriptMode === "manual" ? scriptText : null,
         topic: voiceEnabled && scriptMode === "ai" ? scriptTopic : null,
+        ...subtitleFields,
       };
     }
 
@@ -266,6 +282,71 @@ export function Create() {
             )}
           </div>
         )}
+
+        <div className="space-y-4 border-t pt-4">
+          <FieldLabel>Sous-titres</FieldLabel>
+          <div className="flex gap-5">
+            <div className="flex-1 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <FieldLabel>Affichage</FieldLabel>
+                  <Select value={subMode} onValueChange={(v) => setSubMode(v as SubtitleMode)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sentence">Phrase</SelectItem>
+                      <SelectItem value="word">Mot par mot</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <FieldLabel>Couleur</FieldLabel>
+                  <input
+                    type="color"
+                    value={subColor}
+                    onChange={(e) => setSubColor(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <FieldLabel>Taille · {subSize}px</FieldLabel>
+                <input
+                  type="range"
+                  min={32}
+                  max={120}
+                  value={subSize}
+                  onChange={(e) => setSubSize(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+              </div>
+
+              {subMode === "sentence" && (
+                <div className="space-y-1">
+                  <FieldLabel>Longueur · {subMaxWords} mots / sous-titre</FieldLabel>
+                  <input
+                    type="range"
+                    min={1}
+                    max={12}
+                    value={subMaxWords}
+                    onChange={(e) => setSubMaxWords(Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                </div>
+              )}
+            </div>
+
+            <SubtitlePreview
+              size={subSize}
+              color={subColor}
+              mode={subMode}
+              maxWords={subMaxWords}
+              format={mode === "clip" ? videoFormat : "short"}
+            />
+          </div>
+        </div>
 
         <Button className="w-full" disabled={running} onClick={startGeneration}>
           {running ? "Génération en cours..." : "Lancer la génération"}

@@ -6,58 +6,30 @@ import config
 TRANSITION = 0.3
 FONT_PATH = r"C:\Windows\Fonts\arialbd.ttf"
 
-
-def _build_scene_clip(image_path, caption, duration, is_first):
-    clip = ImageClip(image_path).with_duration(duration)
-    clip = clip.with_effects([Resize(height=config.VIDEO_HEIGHT)])
-    if clip.w > config.VIDEO_WIDTH:
-        clip = clip.with_effects([Crop(x_center=clip.w / 2, width=config.VIDEO_WIDTH)])
-    if not is_first:
-        clip = clip.with_effects([CrossFadeIn(TRANSITION)])
-
-    subtitle = TextClip(
-        font=FONT_PATH,
-        text=caption,
-        font_size=64,
-        color="white",
-        stroke_color="black",
-        stroke_width=3,
-        method="caption",
-        size=(int(config.VIDEO_WIDTH * 0.85), None),
-        text_align="center",
-        horizontal_align="center",
-        vertical_align="center",
-    ).with_duration(duration).with_position(("center", 0.78), relative=True)
-
-    return CompositeVideoClip([clip, subtitle], size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT))
+DEFAULT_SUBTITLE_STYLE = {
+    "font_size": 64,       # taille à la largeur de référence 1080 px
+    "color": "#FFFFFF",    # couleur du texte (hex)
+    "mode": "sentence",    # "sentence" ou "word" (mot par mot)
+    "max_words": 6,        # mots max par sous-titre en mode phrase
+}
 
 
-def build_video_from_images(image_paths, captions, audio_path):
-    audio = AudioFileClip(audio_path)
-    duration_each = audio.duration / len(image_paths)
-
-    clips = []
-    for i, (path, caption) in enumerate(zip(image_paths, captions)):
-        clip_duration = duration_each + (TRANSITION if i > 0 else 0)
-        clips.append(_build_scene_clip(path, caption, clip_duration, is_first=(i == 0)))
-
-    video = concatenate_videoclips(clips, method="compose", padding=-TRANSITION)
-    final = video.with_audio(audio)
-
-    output_path = os.path.join(config.FINAL_DIR, "short.mp4")
-    final.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac")
-
-    audio.close()
-    return output_path
+def _style(subtitle_style):
+    return {**DEFAULT_SUBTITLE_STYLE, **(subtitle_style or {})}
 
 
-def _caption_clip(text, start, duration, frame_width):
+def _scaled_font(style, frame_width):
+    # La taille est définie pour 1080 px de large ; on l'adapte à la largeur réelle.
+    return max(12, round(style["font_size"] * frame_width / config.VIDEO_WIDTH))
+
+
+def _make_caption_clip(text, start, duration, frame_width, style):
     return (
         TextClip(
             font=FONT_PATH,
             text=text,
-            font_size=64,
-            color="white",
+            font_size=_scaled_font(style, frame_width),
+            color=style["color"],
             stroke_color="black",
             stroke_width=3,
             method="caption",
@@ -72,6 +44,48 @@ def _caption_clip(text, start, duration, frame_width):
     )
 
 
+def _word_timings(captions, timed_segments, total_duration):
+    """Liste de (mot, start, end) en secondes."""
+    words = []
+    if timed_segments:
+        for seg in timed_segments:
+            tokens = seg["text"].split()
+            if not tokens:
+                continue
+            seg_dur = max(0.1, seg["end"] - seg["start"])
+            per = seg_dur / len(tokens)
+            for i, tok in enumerate(tokens):
+                ws = seg["start"] + i * per
+                words.append((tok, ws, ws + per))
+    elif captions:
+        tokens = [t for c in captions for t in c.split()]
+        if not tokens:
+            return []
+        per = total_duration / len(tokens)
+        for i, tok in enumerate(tokens):
+            words.append((tok, i * per, (i + 1) * per))
+    return words
+
+
+def _build_caption_timeline(captions, timed_segments, total_duration, style):
+    """Retourne une liste de (start, duration, text) selon le style choisi."""
+    words = _word_timings(captions, timed_segments, total_duration)
+    if not words:
+        return []
+
+    if style["mode"] == "word":
+        return [(w[1], max(0.1, w[2] - w[1]), w[0]) for w in words]
+
+    n = max(1, int(style["max_words"]))
+    chunks = []
+    for i in range(0, len(words), n):
+        group = words[i : i + n]
+        text = " ".join(w[0] for w in group)
+        start, end = group[0][1], group[-1][2]
+        chunks.append((start, max(0.1, end - start), text))
+    return chunks
+
+
 def _fit_short(video):
     """Recadre la vidéo en 9:16 (1080x1920)."""
     video = video.with_effects([Resize(height=config.VIDEO_HEIGHT)])
@@ -83,12 +97,51 @@ def _fit_short(video):
     return video
 
 
+def _scene_image(image_path, duration, is_first):
+    clip = ImageClip(image_path).with_duration(duration)
+    clip = clip.with_effects([Resize(height=config.VIDEO_HEIGHT)])
+    if clip.w > config.VIDEO_WIDTH:
+        clip = clip.with_effects([Crop(x_center=clip.w / 2, width=config.VIDEO_WIDTH)])
+    if not is_first:
+        clip = clip.with_effects([CrossFadeIn(TRANSITION)])
+    return clip
+
+
+def build_video_from_images(image_paths, captions, audio_path, subtitle_style=None):
+    style = _style(subtitle_style)
+    audio = AudioFileClip(audio_path)
+    duration_each = audio.duration / len(image_paths)
+
+    scenes = []
+    for i, path in enumerate(image_paths):
+        clip_duration = duration_each + (TRANSITION if i > 0 else 0)
+        scenes.append(_scene_image(path, clip_duration, is_first=(i == 0)))
+
+    slideshow = concatenate_videoclips(scenes, method="compose", padding=-TRANSITION)
+
+    timeline = _build_caption_timeline(captions, None, audio.duration, style)
+    caption_clips = [
+        _make_caption_clip(text, start, dur, config.VIDEO_WIDTH, style)
+        for (start, dur, text) in timeline
+    ]
+
+    final = CompositeVideoClip([slideshow, *caption_clips], size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT))
+    final = final.with_audio(audio)
+
+    output_path = os.path.join(config.FINAL_DIR, "short.mp4")
+    final.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac")
+
+    audio.close()
+    return output_path
+
+
 def build_video_from_clip(
     video_path,
     audio_path=None,
     captions=None,
     timed_segments=None,
     video_format="short",
+    subtitle_style=None,
 ):
     """Monte une vidéo à partir d'un clip réel.
 
@@ -97,7 +150,9 @@ def build_video_from_clip(
     - timed_segments   → sous-titres synchronisés [{start, end, text}] (transcription).
     - captions         → sous-titres répartis uniformément (liste de phrases).
     - video_format     → "short" (9:16 recadré) ou "video" (aspect d'origine conservé).
+    - subtitle_style   → {font_size, color, mode, max_words}.
     """
+    style = _style(subtitle_style)
     video = VideoFileClip(video_path)
     audio = None
 
@@ -115,20 +170,12 @@ def build_video_from_clip(
 
     frame_width = video.w
 
-    caption_clips = []
-    if timed_segments:
-        for seg in timed_segments:
-            start = seg["start"]
-            dur = max(0.1, min(seg["end"], target_duration) - start)
-            if start >= target_duration:
-                continue
-            caption_clips.append(_caption_clip(seg["text"], start, dur, frame_width))
-    elif captions:
-        duration_each = target_duration / len(captions)
-        caption_clips = [
-            _caption_clip(c, i * duration_each, duration_each, frame_width)
-            for i, c in enumerate(captions)
-        ]
+    timeline = _build_caption_timeline(captions, timed_segments, target_duration, style)
+    caption_clips = [
+        _make_caption_clip(text, start, dur, frame_width, style)
+        for (start, dur, text) in timeline
+        if start < target_duration
+    ]
 
     final = CompositeVideoClip([video, *caption_clips], size=(video.w, video.h))
     if audio is not None:

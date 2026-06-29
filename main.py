@@ -13,7 +13,7 @@ from agents import (
 )
 
 
-def run(topic=None, film=None, on_progress=print):
+def run(topic=None, film=None, subtitle_style=None, on_progress=print):
     on_progress("1/6 - Génération du script...")
     if film:
         data = script_agent.generate_film_analysis_script(film)
@@ -35,7 +35,7 @@ def run(topic=None, film=None, on_progress=print):
     audio_path = voice_agent.generate_voice(data["script"])
 
     on_progress("4/6 - Montage de la vidéo...")
-    video_path = edit_agent.build_video_from_images(image_paths, captions, audio_path)
+    video_path = edit_agent.build_video_from_images(image_paths, captions, audio_path, subtitle_style=subtitle_style)
 
     on_progress("5/6 - Upload sur YouTube (privé)...")
     video_id = upload_agent.upload_video(
@@ -64,6 +64,7 @@ def run_from_clip(
     transcription_engine="whisper",
     video_format="short",
     video_quality="best",
+    subtitle_style=None,
     on_progress=print,
 ):
     on_progress("1/7 - Vérification de la source...")
@@ -119,6 +120,7 @@ def run_from_clip(
         captions=captions,
         timed_segments=timed_segments,
         video_format=video_format,
+        subtitle_style=subtitle_style,
     )
 
     label = "Short" if video_format == "short" else "vidéo"

@@ -38,6 +38,7 @@ def start_generation(
     transcription_engine="whisper",
     video_format="short",
     video_quality="best",
+    subtitle_style=None,
 ):
     job_id = str(uuid.uuid4())
     q = queue.Queue()
@@ -53,9 +54,9 @@ def start_generation(
     def worker():
         try:
             if mode == "film":
-                result = pipeline.run(film=film, on_progress=on_progress)
+                result = pipeline.run(film=film, subtitle_style=subtitle_style, on_progress=on_progress)
             elif mode == "topic":
-                result = pipeline.run(topic=topic, on_progress=on_progress)
+                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, on_progress=on_progress)
             elif mode == "clip":
                 result = pipeline.run_from_clip(
                     source_url=source_url,
@@ -72,10 +73,11 @@ def start_generation(
                     transcription_engine=transcription_engine,
                     video_format=video_format,
                     video_quality=video_quality,
+                    subtitle_style=subtitle_style,
                     on_progress=on_progress,
                 )
             else:
-                result = pipeline.run(on_progress=on_progress)
+                result = pipeline.run(subtitle_style=subtitle_style, on_progress=on_progress)
 
             if result is None:
                 q.put({"type": "skipped", "message": "Sujet déjà utilisé, génération arrêtée."})

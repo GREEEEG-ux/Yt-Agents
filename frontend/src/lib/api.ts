@@ -37,6 +37,7 @@ export type VideoFormat = "short" | "video";
 export type Language = "fr" | "en";
 export type TranscriptionEngine = "whisper" | "assemblyai" | "deepgram";
 export type VideoQuality = "best" | "1080" | "720" | "480" | "360";
+export type SubtitleMode = "sentence" | "word";
 
 export type GenerateRequest = {
   mode: GenerateMode;
@@ -55,6 +56,10 @@ export type GenerateRequest = {
   transcription_engine?: TranscriptionEngine;
   video_format?: VideoFormat;
   video_quality?: VideoQuality;
+  subtitle_size?: number;
+  subtitle_color?: string;
+  subtitle_mode?: SubtitleMode;
+  subtitle_max_words?: number;
 };
 
 export type JobMessage =

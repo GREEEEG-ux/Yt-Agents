@@ -41,6 +41,10 @@ class GenerateRequest(BaseModel):
     transcription_engine: str = "whisper"
     video_format: str = "short"
     video_quality: str = "best"
+    subtitle_size: int = 64
+    subtitle_color: str = "#FFFFFF"
+    subtitle_mode: str = "sentence"
+    subtitle_max_words: int = 6
 
 
 class PublishRequest(BaseModel):
@@ -101,6 +105,12 @@ def generate(req: GenerateRequest):
         transcription_engine=req.transcription_engine,
         video_format=req.video_format,
         video_quality=req.video_quality,
+        subtitle_style={
+            "font_size": req.subtitle_size,
+            "color": req.subtitle_color,
+            "mode": req.subtitle_mode,
+            "max_words": req.subtitle_max_words,
+        },
     )
     return {"job_id": job_id}
 
