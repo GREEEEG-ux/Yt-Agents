@@ -63,7 +63,10 @@ export function Create() {
   const [subSize, setSubSize] = useState(64);
   const [subColor, setSubColor] = useState("#FFFFFF");
   const [subMode, setSubMode] = useState<SubtitleMode>("sentence");
-  const [subMaxWords, setSubMaxWords] = useState(6);
+  const [subMaxWords, setSubMaxWords] = useState(3);
+
+  // Prévisualiser la vidéo avant de l'envoyer sur YouTube.
+  const [previewFirst, setPreviewFirst] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +104,7 @@ export function Create() {
       };
     }
 
+    req.auto_upload = !previewFirst;
     await job.startJob(req, file);
   }
 
@@ -346,6 +350,16 @@ export function Create() {
               format={mode === "clip" ? videoFormat : "short"}
             />
           </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <FieldLabel>Prévisualiser avant de publier</FieldLabel>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Voir la vidéo montée et confirmer avant l'envoi sur YouTube.
+            </p>
+          </div>
+          <Switch checked={previewFirst} onCheckedChange={setPreviewFirst} />
         </div>
 
         <Button className="w-full" disabled={running} onClick={startGeneration}>

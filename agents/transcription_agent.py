@@ -53,12 +53,22 @@ def _get_whisper():
 
 def _transcribe_whisper(media_path, language):
     model = _get_whisper()
-    segments, _info = model.transcribe(media_path, language=language, vad_filter=True)
-    return [
-        {"start": seg.start, "end": seg.end, "text": seg.text.strip()}
-        for seg in segments
-        if seg.text.strip()
-    ]
+    segments, _info = model.transcribe(
+        media_path, language=language, vad_filter=True, word_timestamps=True
+    )
+    result = []
+    for seg in segments:
+        if not seg.text.strip():
+            continue
+        words = [
+            {"start": w.start, "end": w.end, "text": w.word.strip()}
+            for w in (seg.words or [])
+            if w.word.strip()
+        ]
+        result.append(
+            {"start": seg.start, "end": seg.end, "text": seg.text.strip(), "words": words}
+        )
+    return result
 
 
 # --- AssemblyAI (cloud) ---

@@ -6,6 +6,7 @@ import uuid
 import main as pipeline
 
 _jobs = {}
+_pending = {}  # job_id -> métadonnées d'une vidéo montée en attente de publication
 
 _STEP_RE = re.compile(r"^(\d+)\s*/\s*(\d+)")
 
@@ -39,6 +40,7 @@ def start_generation(
     video_format="short",
     video_quality="best",
     subtitle_style=None,
+    auto_upload=True,
 ):
     job_id = str(uuid.uuid4())
     q = queue.Queue()
@@ -54,9 +56,9 @@ def start_generation(
     def worker():
         try:
             if mode == "film":
-                result = pipeline.run(film=film, subtitle_style=subtitle_style, on_progress=on_progress)
+                result = pipeline.run(film=film, subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "topic":
-                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, on_progress=on_progress)
+                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "clip":
                 result = pipeline.run_from_clip(
                     source_url=source_url,
@@ -74,13 +76,25 @@ def start_generation(
                     video_format=video_format,
                     video_quality=video_quality,
                     subtitle_style=subtitle_style,
+                    auto_upload=auto_upload,
                     on_progress=on_progress,
                 )
             else:
-                result = pipeline.run(subtitle_style=subtitle_style, on_progress=on_progress)
+                result = pipeline.run(subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
 
             if result is None:
                 q.put({"type": "skipped", "message": "Sujet déjà utilisé, génération arrêtée."})
+            elif result.get("preview"):
+                _pending[job_id] = result
+                q.put({
+                    "type": "preview",
+                    "job_id": job_id,
+                    "result": {
+                        "title": result["title"],
+                        "topic": result["topic"],
+                        "preview_url": "/videos/short.mp4",
+                    },
+                })
             else:
                 q.put({"type": "done", "result": result})
         except Exception as e:
@@ -88,6 +102,43 @@ def start_generation(
 
     threading.Thread(target=worker, daemon=True).start()
     return job_id
+
+
+def start_publish(preview_job_id):
+    """Lance l'upload d'une vidéo déjà montée et prévisualisée."""
+    meta = _pending.get(preview_job_id)
+    if meta is None:
+        return None
+
+    job_id = str(uuid.uuid4())
+    q = queue.Queue()
+    _jobs[job_id] = q
+
+    def on_progress(message):
+        q.put({"type": "progress", "message": message})
+
+    def worker():
+        try:
+            result = pipeline.publish_built(
+                video_path=meta["video_path"],
+                title=meta["title"],
+                description=meta["description"],
+                tags=meta["tags"],
+                topic=meta["topic"],
+                as_short=meta["as_short"],
+                on_progress=on_progress,
+            )
+            _pending.pop(preview_job_id, None)
+            q.put({"type": "done", "result": result})
+        except Exception as e:
+            q.put({"type": "error", "message": str(e)})
+
+    threading.Thread(target=worker, daemon=True).start()
+    return job_id
+
+
+def discard_pending(preview_job_id):
+    _pending.pop(preview_job_id, None)
 
 
 def get_queue(job_id):

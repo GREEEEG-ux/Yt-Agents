@@ -10,7 +10,7 @@ DEFAULT_SUBTITLE_STYLE = {
     "font_size": 64,       # taille à la largeur de référence 1080 px
     "color": "#FFFFFF",    # couleur du texte (hex)
     "mode": "sentence",    # "sentence" ou "word" (mot par mot)
-    "max_words": 6,        # mots max par sous-titre en mode phrase
+    "max_words": 3,        # mots max par sous-titre en mode phrase (groupes dynamiques)
 }
 
 
@@ -23,25 +23,31 @@ def _scaled_font(style, frame_width):
     return max(12, round(style["font_size"] * frame_width / config.VIDEO_WIDTH))
 
 
-def _make_caption_clip(text, start, duration, frame_width, style):
-    return (
-        TextClip(
-            font=FONT_PATH,
-            text=text,
-            font_size=_scaled_font(style, frame_width),
-            color=style["color"],
-            stroke_color="black",
-            stroke_width=3,
-            method="caption",
-            size=(int(frame_width * 0.85), None),
-            text_align="center",
-            horizontal_align="center",
-            vertical_align="center",
-        )
-        .with_start(start)
-        .with_duration(duration)
-        .with_position(("center", 0.78), relative=True)
+def _make_caption_clip(text, start, duration, frame_width, frame_height, style):
+    font_size = _scaled_font(style, frame_width)
+    # method="caption" sous-estime la hauteur : sans cette marge verticale, le
+    # contour et le bas de la dernière ligne sont rognés dans le bitmap du texte.
+    v_margin = round(font_size * 0.35)
+    clip = TextClip(
+        font=FONT_PATH,
+        text=text,
+        font_size=font_size,
+        color=style["color"],
+        stroke_color="black",
+        stroke_width=3,
+        method="caption",
+        size=(int(frame_width * 0.85), None),
+        margin=(0, v_margin),
+        text_align="center",
+        horizontal_align="center",
+        vertical_align="center",
     )
+    # On centre le bloc sur la ligne des 78 % (comme l'aperçu du frontend) puis
+    # on le borne pour qu'il reste toujours entièrement visible dans le cadre.
+    margin = round(frame_height * 0.02)
+    y = round(frame_height * 0.78 - clip.h / 2)
+    y = max(margin, min(y, frame_height - clip.h - margin))
+    return clip.with_start(start).with_duration(duration).with_position(("center", y))
 
 
 def _word_timings(captions, timed_segments, total_duration):
@@ -49,6 +55,15 @@ def _word_timings(captions, timed_segments, total_duration):
     words = []
     if timed_segments:
         for seg in timed_segments:
+            # Timestamps précis par mot (Whisper word_timestamps) si disponibles.
+            seg_words = seg.get("words")
+            if seg_words:
+                for w in seg_words:
+                    tok = w["text"].strip()
+                    if tok:
+                        words.append((tok, w["start"], max(w["end"], w["start"] + 0.05)))
+                continue
+            # Repli : répartition uniforme sur la durée du segment.
             tokens = seg["text"].split()
             if not tokens:
                 continue
@@ -77,12 +92,19 @@ def _build_caption_timeline(captions, timed_segments, total_duration, style):
         return [(w[1], max(0.1, w[2] - w[1]), w[0]) for w in words]
 
     n = max(1, int(style["max_words"]))
-    chunks = []
+    groups = []
     for i in range(0, len(words), n):
         group = words[i : i + n]
         text = " ".join(w[0] for w in group)
-        start, end = group[0][1], group[-1][2]
-        chunks.append((start, max(0.1, end - start), text))
+        groups.append((group[0][1], group[-1][2], text))
+
+    # On prolonge chaque groupe jusqu'au début du suivant pour éviter les
+    # clignotements, sans dépasser sa fin naturelle de plus de 0,4 s (silences).
+    chunks = []
+    for i, (start, end, text) in enumerate(groups):
+        next_start = groups[i + 1][0] if i + 1 < len(groups) else end
+        display_end = min(max(end, next_start), end + 0.4)
+        chunks.append((start, max(0.1, display_end - start), text))
     return chunks
 
 
@@ -93,7 +115,10 @@ def _fit_short(video):
         video = video.with_effects([Crop(x_center=video.w / 2, width=config.VIDEO_WIDTH)])
     elif video.w < config.VIDEO_WIDTH:
         video = video.with_effects([Resize(width=config.VIDEO_WIDTH)])
-        video = video.with_effects([Crop(y_center=video.h / 2, height=config.VIDEO_HEIGHT)])
+        # Biais vers le haut (42 %) : on garde les visages, souvent hauts dans le cadre.
+        y_center = max(config.VIDEO_HEIGHT / 2, video.h * 0.42)
+        y_center = min(y_center, video.h - config.VIDEO_HEIGHT / 2)
+        video = video.with_effects([Crop(y_center=y_center, height=config.VIDEO_HEIGHT)])
     return video
 
 
@@ -121,7 +146,7 @@ def build_video_from_images(image_paths, captions, audio_path, subtitle_style=No
 
     timeline = _build_caption_timeline(captions, None, audio.duration, style)
     caption_clips = [
-        _make_caption_clip(text, start, dur, config.VIDEO_WIDTH, style)
+        _make_caption_clip(text, start, dur, config.VIDEO_WIDTH, config.VIDEO_HEIGHT, style)
         for (start, dur, text) in timeline
     ]
 
@@ -169,10 +194,11 @@ def build_video_from_clip(
         video = _fit_short(video)
 
     frame_width = video.w
+    frame_height = video.h
 
     timeline = _build_caption_timeline(captions, timed_segments, target_duration, style)
     caption_clips = [
-        _make_caption_clip(text, start, dur, frame_width, style)
+        _make_caption_clip(text, start, dur, frame_width, frame_height, style)
         for (start, dur, text) in timeline
         if start < target_duration
     ]

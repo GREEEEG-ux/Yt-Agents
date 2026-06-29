@@ -60,11 +60,24 @@ export type GenerateRequest = {
   subtitle_color?: string;
   subtitle_mode?: SubtitleMode;
   subtitle_max_words?: number;
+  auto_upload?: boolean;
+};
+
+export type SeoResult = {
+  topic: string;
+  title: string;
+  description: string;
+  short_description: string;
+  hashtags_main: string[];
+  hashtags_secondary: string[];
+  tags: string[];
+  hooks: string[];
 };
 
 export type JobMessage =
   | { type: "progress"; message: string; percent?: number }
   | { type: "done"; result: { video_id: string; topic: string; title: string } }
+  | { type: "preview"; job_id: string; result: { title: string; topic: string; preview_url: string } }
   | { type: "skipped"; message: string }
   | { type: "error"; message: string };
 
@@ -102,6 +115,27 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
     }).then((r) => json(r)),
+
+  publishBuilt: (jobId: string): Promise<{ job_id?: string; error?: string }> =>
+    fetch("/api/publish-built", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ job_id: jobId }),
+    }).then((r) => json(r)),
+
+  discardPreview: (jobId: string): Promise<{ ok: boolean }> =>
+    fetch("/api/discard-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ job_id: jobId }),
+    }).then((r) => json(r)),
+
+  seo: (req: { topic?: string; script?: string; niche?: string }): Promise<SeoResult> =>
+    fetch("/api/seo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    }).then((r) => json<SeoResult>(r)),
 
   watchJob: (jobId: string, onMessage: (msg: JobMessage) => void) => {
     const ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}`);

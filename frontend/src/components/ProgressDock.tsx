@@ -5,7 +5,8 @@ import { X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 export function ProgressDock() {
   const { status, percent, lastMessage, result, dismiss } = useJob();
 
-  if (status === "idle") return null;
+  // Les états "preview" et "publishing" sont gérés par PreviewModal / PublishingOverlay.
+  if (status === "idle" || status === "preview" || status === "publishing") return null;
 
   const running = status === "running";
   const isError = status === "error";

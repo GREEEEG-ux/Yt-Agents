@@ -2,17 +2,20 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { JobProvider, useJob } from "@/lib/JobContext";
 import { ProgressDock } from "@/components/ProgressDock";
+import { PreviewModal, PublishingOverlay } from "@/components/PreviewModal";
 import { Home } from "@/views/Home";
 import { Create } from "@/views/Create";
+import { SeoTool } from "@/views/SeoTool";
 import { Library } from "@/views/Library";
 import { Performances } from "@/views/Performances";
 import { Settings } from "@/views/Settings";
 
-type View = "home" | "create" | "library" | "performances" | "settings";
+type View = "home" | "create" | "seo" | "library" | "performances" | "settings";
 
 const TABS: { id: View; label: string }[] = [
   { id: "home", label: "Accueil" },
   { id: "create", label: "Créer" },
+  { id: "seo", label: "SEO" },
   { id: "library", label: "Bibliothèque" },
   { id: "performances", label: "Performances" },
   { id: "settings", label: "Réglages" },
@@ -60,12 +63,15 @@ function AppShell() {
       <main className="max-w-5xl mx-auto px-6 py-8">
         {view === "home" && <Home onCreate={() => setView("create")} />}
         {view === "create" && <Create />}
+        {view === "seo" && <SeoTool />}
         {view === "library" && <Library />}
         {view === "performances" && <Performances />}
         {view === "settings" && <Settings />}
       </main>
 
       <ProgressDock />
+      <PreviewModal />
+      <PublishingOverlay />
     </div>
   );
 }

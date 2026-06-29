@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import config
-from agents import storage_agent, upload_agent
+from agents import storage_agent, upload_agent, script_agent
 from api import jobs
 
 app = FastAPI(title="yt-shorts-agent dashboard")
@@ -45,11 +45,22 @@ class GenerateRequest(BaseModel):
     subtitle_color: str = "#FFFFFF"
     subtitle_mode: str = "sentence"
     subtitle_max_words: int = 6
+    auto_upload: bool = True
 
 
 class PublishRequest(BaseModel):
     video_id: str
     privacy_status: str
+
+
+class PublishBuiltRequest(BaseModel):
+    job_id: str
+
+
+class SeoRequest(BaseModel):
+    topic: str = ""
+    script: str = ""
+    niche: str = ""
 
 
 @app.get("/api/history")
@@ -111,8 +122,30 @@ def generate(req: GenerateRequest):
             "mode": req.subtitle_mode,
             "max_words": req.subtitle_max_words,
         },
+        auto_upload=req.auto_upload,
     )
     return {"job_id": job_id}
+
+
+@app.post("/api/publish-built")
+def publish_built(req: PublishBuiltRequest):
+    job_id = jobs.start_publish(req.job_id)
+    if job_id is None:
+        return {"error": "Aucune vidéo en attente de publication pour ce job."}
+    return {"job_id": job_id}
+
+
+@app.post("/api/discard-preview")
+def discard_preview(req: PublishBuiltRequest):
+    jobs.discard_pending(req.job_id)
+    return {"ok": True}
+
+
+@app.post("/api/seo")
+def seo(req: SeoRequest):
+    return script_agent.generate_seo_metadata(
+        topic=req.topic, script=req.script, niche=req.niche
+    )
 
 
 UPLOADS_DIR = os.path.join(config.VIDEOS_DIR, "uploads")
@@ -146,7 +179,7 @@ async def job_progress(websocket: WebSocket, job_id: str):
                 continue
 
             await websocket.send_json(item)
-            if item["type"] in ("done", "error", "skipped"):
+            if item["type"] in ("done", "error", "skipped", "preview"):
                 break
     except WebSocketDisconnect:
         pass
