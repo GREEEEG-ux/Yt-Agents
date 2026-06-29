@@ -6,4 +6,6 @@ token.json
 output/
 piper/
 desktop/node_modules/
+frontend/node_modules/
+dashboard/
 data/history.json

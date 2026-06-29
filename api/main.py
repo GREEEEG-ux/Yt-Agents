@@ -1,8 +1,9 @@
 import asyncio
 import os
 import shutil
+import uuid
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -27,6 +28,10 @@ class GenerateRequest(BaseModel):
     mode: str = "free"
     topic: str | None = None
     film: str | None = None
+    source_url: str | None = None
+    file_path: str | None = None
+    mine: bool = False
+    script_text: str | None = None
 
 
 class PublishRequest(BaseModel):
@@ -68,8 +73,29 @@ def get_config_status():
 
 @app.post("/api/generate")
 def generate(req: GenerateRequest):
-    job_id = jobs.start_generation(req.mode, topic=req.topic, film=req.film)
+    job_id = jobs.start_generation(
+        req.mode,
+        topic=req.topic,
+        film=req.film,
+        source_url=req.source_url,
+        file_path=req.file_path,
+        mine=req.mine,
+        script_text=req.script_text,
+    )
     return {"job_id": job_id}
+
+
+UPLOADS_DIR = os.path.join(config.VIDEOS_DIR, "uploads")
+os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+
+@app.post("/api/upload-local")
+async def upload_local(file: UploadFile = File(...)):
+    ext = os.path.splitext(file.filename)[1] or ".mp4"
+    dest = os.path.join(UPLOADS_DIR, f"{uuid.uuid4().hex[:8]}{ext}")
+    with open(dest, "wb") as f:
+        f.write(await file.read())
+    return {"file_path": dest}
 
 
 @app.websocket("/ws/jobs/{job_id}")

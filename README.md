@@ -13,6 +13,22 @@ Voir le prompt d'architecture d'origine et les notes de conception dans le coffr
 5. Télécharger [Piper TTS](https://github.com/rhasspy/piper/releases) (binaire Windows) et un modèle de voix (ex: `fr_FR-siwis-medium`), les placer dans `piper/` (dossier non versionné, trop volumineux pour git)
 6. `python main.py`
 
+## Dashboard (React + Tailwind + shadcn/ui)
+
+Le code source du dashboard est dans `frontend/`. Il se build en fichiers statiques servis par le backend FastAPI depuis `dashboard/` (généré, non versionné).
+
+```
+cd frontend
+npm install
+npm run build
+```
+
+Pour développer avec rechargement à chaud (le backend FastAPI doit tourner sur le port 8000) :
+```
+cd frontend
+npm run dev
+```
+
 ## Dashboard desktop (Electron)
 
 ```
@@ -21,7 +37,7 @@ npm install
 npm start
 ```
 
-Lance automatiquement le backend FastAPI (`api/`) et ouvre le dashboard dans une fenêtre native. Interface : Accueil, Créer, Bibliothèque, Performances, Réglages.
+Lance automatiquement le backend FastAPI (`api/`) et ouvre le dashboard (`dashboard/`, donc faire `npm run build` dans `frontend/` au moins une fois avant) dans une fenêtre native. Interface : Accueil, Créer, Bibliothèque, Performances, Réglages.
 
 ## Fournir ses propres clips vidéo
 

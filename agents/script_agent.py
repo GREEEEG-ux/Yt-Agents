@@ -73,7 +73,42 @@ def generate_film_analysis_script(film):
     return _call_groq(prompt)
 
 
+METADATA_PROMPT = """Tu es un expert en optimisation YouTube Shorts.
+Voici un script de voix off déjà écrit, à ne pas modifier :
+---
+{script}
+---
+
+Génère uniquement les métadonnées associées : un titre accrocheur, une description avec hashtags, des tags, et un sujet en quelques mots.
+
+Réponds STRICTEMENT en JSON avec ces clés :
+{{
+  "topic": "sujet en quelques mots",
+  "title": "titre accrocheur de moins de 80 caractères",
+  "description": "description YouTube avec hashtags",
+  "tags": ["tag1", "tag2", "tag3"]
+}}
+Ne donne aucun texte hors du JSON."""
+
+
+def generate_metadata_for_script(script):
+    prompt = METADATA_PROMPT.format(script=script)
+    data = _call_groq(prompt)
+    data["script"] = script
+    return data
+
+
 MAX_RETRIES = 3
+
+
+def _strip_code_fence(content):
+    content = content.strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+        if content.rstrip().endswith("```"):
+            content = content.rstrip()[:-3]
+        content = content.removeprefix("json").strip() if content.strip().startswith("json") else content
+    return content.strip()
 
 
 def _call_groq(prompt):
@@ -84,7 +119,7 @@ def _call_groq(prompt):
             messages=[{"role": "user", "content": prompt}],
             temperature=0.9,
         )
-        content = response.choices[0].message.content
+        content = _strip_code_fence(response.choices[0].message.content)
         try:
             return json.loads(content)
         except json.JSONDecodeError as e:
