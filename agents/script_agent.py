@@ -249,13 +249,13 @@ def _strip_code_fence(content):
     return content.strip()
 
 
-def _call_groq(prompt):
+def _call_groq(prompt, temperature=0.9):
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.9,
+            temperature=temperature,
         )
         content = _strip_code_fence(response.choices[0].message.content)
         try:

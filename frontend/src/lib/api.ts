@@ -74,6 +74,90 @@ export type SeoResult = {
   hooks: string[];
 };
 
+export type OptimizerReport = {
+  error?: string;
+  _meta?: { videos_analyzed: number; analytics_available: boolean };
+  data_quality?: {
+    total_videos_received: number;
+    usable_videos: number;
+    sample_size_warning: boolean;
+    missing_or_unreliable_fields: string[];
+    notes: string;
+  };
+  channel_benchmarks?: Record<string, number>;
+  global_analysis?: {
+    total_videos_analyzed: number;
+    average_views: number;
+    average_retention_rate: number;
+    average_ctr: number;
+    best_performing_topics: string[];
+    worst_performing_topics: string[];
+    main_strengths: string[];
+    main_weaknesses: string[];
+  };
+  top_videos?: {
+    video_id: string;
+    title: string;
+    reason: string;
+    what_to_repeat: string[];
+  }[];
+  underperforming_videos?: {
+    video_id: string;
+    title: string;
+    problem: string;
+    root_cause: string;
+    fixes: string[];
+  }[];
+  seo_recommendations?: {
+    recommended_title_patterns: string[];
+    recommended_description_structure: string;
+    recommended_hashtags: string[];
+    hashtags_to_avoid: string[];
+    recommended_tags: string[];
+    best_keywords: string[];
+    keywords_to_avoid: string[];
+  };
+  content_strategy?: {
+    topics_to_repeat: string[];
+    topics_to_avoid: string[];
+    new_video_ideas: {
+      idea: string;
+      reason: string;
+      suggested_hook: string;
+      suggested_title: string;
+      suggested_hashtags: string[];
+      estimated_potential: string;
+      confidence: number;
+    }[];
+    recommended_posting_times: string[];
+  };
+  next_upload_settings?: Record<string, unknown> & {
+    title_formula?: string;
+    description_template?: string;
+    hashtags?: string[];
+    tags?: string[];
+    hook_style?: string;
+    publish_time?: string;
+  };
+  videos_to_update?: {
+    video_id: string;
+    current_title: string;
+    new_title: string;
+    current_description: string;
+    new_description: string;
+    current_hashtags: string[];
+    new_hashtags: string[];
+    reason: string;
+    confidence: number;
+  }[];
+  summary?: {
+    main_action_to_take: string;
+    priority_level: string;
+    confidence: number;
+    next_3_actions: string[];
+  };
+};
+
 export type JobMessage =
   | { type: "progress"; message: string; percent?: number }
   | { type: "done"; result: { video_id: string; topic: string; title: string } }
@@ -136,6 +220,25 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
     }).then((r) => json<SeoResult>(r)),
+
+  optimizer: (req: { limit?: number; days?: number }): Promise<OptimizerReport> =>
+    fetch("/api/optimizer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    }).then((r) => json<OptimizerReport>(r)),
+
+  applyUpdate: (req: {
+    video_id: string;
+    title?: string;
+    description?: string;
+    tags?: string[];
+  }): Promise<{ ok?: boolean; error?: string }> =>
+    fetch("/api/optimizer/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    }).then((r) => json(r)),
 
   watchJob: (jobId: string, onMessage: (msg: JobMessage) => void) => {
     const ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}`);

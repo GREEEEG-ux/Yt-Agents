@@ -4,11 +4,17 @@ import googleapiclient.discovery
 import googleapiclient.http
 import config
 
-SCOPES = ["https://www.googleapis.com/auth/youtube"]
+# yt-analytics.readonly est requis pour les métriques de rétention / sources de
+# trafic (analytics_agent). Ajouter ce scope invalide l'ancien token : une
+# nouvelle autorisation (re-consentement) sera demandée une fois.
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
+]
 TOKEN_FILE = os.path.join(config.BASE_DIR, "token.json")
 
 
-def get_authenticated_service():
+def get_credentials():
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
 
@@ -29,7 +35,11 @@ def get_authenticated_service():
         with open(TOKEN_FILE, "w") as f:
             f.write(creds.to_json())
 
-    return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+    return creds
+
+
+def get_authenticated_service():
+    return googleapiclient.discovery.build("youtube", "v3", credentials=get_credentials())
 
 
 def upload_video(video_path, title, description, tags, as_short=True):
@@ -72,6 +82,64 @@ def set_privacy(video_id, privacy_status):
         part="status",
         body={"id": video_id, "status": {"privacyStatus": privacy_status}},
     ).execute()
+
+
+def _iso8601_duration_to_seconds(duration):
+    """'PT1M38S' -> 98. Renvoie None si non parsable."""
+    import re
+
+    m = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration or "")
+    if not m:
+        return None
+    h, mn, s = (int(x) if x else 0 for x in m.groups())
+    return h * 3600 + mn * 60 + s
+
+
+def get_video_snippets(video_ids):
+    """Titre, description, tags, date de publication et durée par video_id."""
+    if not video_ids:
+        return {}
+
+    youtube = get_authenticated_service()
+    out = {}
+    for i in range(0, len(video_ids), 50):
+        batch = video_ids[i : i + 50]
+        response = (
+            youtube.videos()
+            .list(part="snippet,contentDetails", id=",".join(batch))
+            .execute()
+        )
+        for item in response.get("items", []):
+            snippet = item.get("snippet", {})
+            out[item["id"]] = {
+                "title": snippet.get("title", ""),
+                "description": snippet.get("description", ""),
+                "tags": snippet.get("tags", []),
+                "published_at": snippet.get("publishedAt", ""),
+                "duration_seconds": _iso8601_duration_to_seconds(
+                    item.get("contentDetails", {}).get("duration", "")
+                ),
+            }
+    return out
+
+
+def set_metadata(video_id, title=None, description=None, tags=None):
+    """Met à jour les métadonnées d'une vidéo existante (pour appliquer les
+    recommandations de l'optimizer)."""
+    youtube = get_authenticated_service()
+    current = youtube.videos().list(part="snippet", id=video_id).execute()
+    items = current.get("items", [])
+    if not items:
+        raise ValueError(f"Vidéo introuvable : {video_id}")
+    snippet = items[0]["snippet"]
+    if title is not None:
+        snippet["title"] = title
+    if description is not None:
+        snippet["description"] = description
+    if tags is not None:
+        snippet["tags"] = tags
+    youtube.videos().update(part="snippet", body={"id": video_id, "snippet": snippet}).execute()
+    return {"ok": True, "video_id": video_id}
 
 
 def get_video_stats(video_ids):

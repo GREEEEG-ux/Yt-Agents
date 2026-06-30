@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import config
-from agents import storage_agent, upload_agent, script_agent
+from agents import storage_agent, upload_agent, script_agent, seo_optimizer_agent
 from api import jobs
 
 app = FastAPI(title="yt-shorts-agent dashboard")
@@ -61,6 +61,18 @@ class SeoRequest(BaseModel):
     topic: str = ""
     script: str = ""
     niche: str = ""
+
+
+class OptimizerRequest(BaseModel):
+    limit: int = 20
+    days: int = 90
+
+
+class ApplyUpdateRequest(BaseModel):
+    video_id: str
+    title: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
 
 
 @app.get("/api/history")
@@ -146,6 +158,24 @@ def seo(req: SeoRequest):
     return script_agent.generate_seo_metadata(
         topic=req.topic, script=req.script, niche=req.niche
     )
+
+
+@app.post("/api/optimizer")
+def optimizer(req: OptimizerRequest):
+    try:
+        return seo_optimizer_agent.analyze(limit=req.limit, days=req.days)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/optimizer/apply")
+def optimizer_apply(req: ApplyUpdateRequest):
+    try:
+        return upload_agent.set_metadata(
+            req.video_id, title=req.title, description=req.description, tags=req.tags
+        )
+    except Exception as e:
+        return {"error": str(e)}
 
 
 UPLOADS_DIR = os.path.join(config.VIDEOS_DIR, "uploads")

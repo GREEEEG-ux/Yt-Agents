@@ -6,16 +6,18 @@ import { PreviewModal, PublishingOverlay } from "@/components/PreviewModal";
 import { Home } from "@/views/Home";
 import { Create } from "@/views/Create";
 import { SeoTool } from "@/views/SeoTool";
+import { OptimizerView } from "@/views/OptimizerView";
 import { Library } from "@/views/Library";
 import { Performances } from "@/views/Performances";
 import { Settings } from "@/views/Settings";
 
-type View = "home" | "create" | "seo" | "library" | "performances" | "settings";
+type View = "home" | "create" | "seo" | "optimizer" | "library" | "performances" | "settings";
 
 const TABS: { id: View; label: string }[] = [
   { id: "home", label: "Accueil" },
   { id: "create", label: "Créer" },
   { id: "seo", label: "SEO" },
+  { id: "optimizer", label: "Optimizer" },
   { id: "library", label: "Bibliothèque" },
   { id: "performances", label: "Performances" },
   { id: "settings", label: "Réglages" },
@@ -64,6 +66,7 @@ function AppShell() {
         {view === "home" && <Home onCreate={() => setView("create")} />}
         {view === "create" && <Create />}
         {view === "seo" && <SeoTool />}
+        {view === "optimizer" && <OptimizerView />}
         {view === "library" && <Library />}
         {view === "performances" && <Performances />}
         {view === "settings" && <Settings />}
