@@ -17,10 +17,11 @@ AUDIO_DIR = os.path.join(OUTPUT_DIR, "audio")
 VIDEOS_DIR = os.path.join(OUTPUT_DIR, "videos")
 IMAGES_DIR = os.path.join(OUTPUT_DIR, "images")
 FINAL_DIR = os.path.join(OUTPUT_DIR, "final")
+THUMBS_DIR = os.path.join(OUTPUT_DIR, "thumbs")
 HISTORY_FILE = os.path.join(DATA_DIR, "history.json")
 VIDEO_LINKS_FILE = os.path.join(DATA_DIR, "video_links.json")
 
-for _dir in (DATA_DIR, AUDIO_DIR, VIDEOS_DIR, IMAGES_DIR, FINAL_DIR):
+for _dir in (DATA_DIR, AUDIO_DIR, VIDEOS_DIR, IMAGES_DIR, FINAL_DIR, THUMBS_DIR):
     os.makedirs(_dir, exist_ok=True)
 
 PIPER_EXE = os.path.join(BASE_DIR, os.getenv("PIPER_EXE", "piper.exe"))

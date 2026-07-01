@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 app.mount("/videos", StaticFiles(directory=config.FINAL_DIR), name="videos")
+app.mount("/thumbs", StaticFiles(directory=config.THUMBS_DIR), name="thumbs")
 
 
 class GenerateRequest(BaseModel):

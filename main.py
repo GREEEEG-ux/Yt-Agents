@@ -1,4 +1,8 @@
+import os
+import subprocess
 import sys
+
+import config
 from agents import (
     script_agent,
     image_agent,
@@ -11,6 +15,19 @@ from agents import (
     upload_agent,
     storage_agent,
 )
+
+
+def _save_thumbnail(video_path, video_id):
+    """Extrait une frame de la vidéo comme vignette locale (poster des cartes)."""
+    dest = os.path.join(config.THUMBS_DIR, f"{video_id}.jpg")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-ss", "1", "-i", video_path, "-frames:v", "1", "-q:v", "3", dest],
+            check=True,
+            capture_output=True,
+        )
+    except Exception:
+        pass  # vignette optionnelle : on n'échoue jamais la génération pour ça
 
 
 def _preview_result(video_path, data, as_short):
@@ -70,6 +87,7 @@ def run(topic=None, film=None, subtitle_style=None, auto_upload=True, on_progres
 
     on_progress("6/6 - Sauvegarde de l'historique...")
     storage_agent.save_history_entry(data["topic"], data["title"], video_id)
+    _save_thumbnail(video_path, video_id)
 
     on_progress(f"Terminé. Vidéo uploadée en privé : https://youtu.be/{video_id}")
     return {"video_id": video_id, "topic": data["topic"], "title": data["title"]}
@@ -162,6 +180,7 @@ def run_from_clip(
 
     on_progress("7/7 - Sauvegarde de l'historique...")
     storage_agent.save_history_entry(data["topic"], data["title"], video_id)
+    _save_thumbnail(video_path, video_id)
 
     on_progress(f"Terminé. Vidéo uploadée en privé : https://youtu.be/{video_id}")
     return {"video_id": video_id, "topic": data["topic"], "title": data["title"]}

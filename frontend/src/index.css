@@ -1,38 +1,41 @@
-@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
 /* ---------------------------------------------------------------------------
-   Premium utilitarian minimalism — warm monochrome, editorial typography.
-   Canvas: warm bone. Text: charcoal. Accent: charcoal CTA + muted pastels.
+   Cinematic dark studio — inspired by Figma's app chrome and Prime Video's
+   immersive, content-forward layout. Deep near-black surfaces, a single vivid
+   accent, rounded media cards, soft depth.
 --------------------------------------------------------------------------- */
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --background: #f7f6f3;       /* warm bone canvas */
-  --foreground: #2f3437;       /* charcoal */
-  --card: #ffffff;
-  --card-foreground: #2f3437;
-  --popover: #ffffff;
-  --popover-foreground: #2f3437;
-  --primary: #17171a;          /* near-black CTA */
+  --background: #0a0a0d;        /* app canvas */
+  --foreground: #f3f3f6;
+  --card: #141419;             /* panels / cards */
+  --card-foreground: #f3f3f6;
+  --popover: #17171d;
+  --popover-foreground: #f3f3f6;
+  --primary: #6d5efc;          /* vivid indigo accent */
   --primary-foreground: #ffffff;
-  --secondary: #f0efea;
-  --secondary-foreground: #2f3437;
-  --muted: #f0efea;
-  --muted-foreground: #787774; /* muted gray */
-  --accent: #efeee9;
-  --accent-foreground: #2f3437;
-  --destructive: #9f2f2d;      /* pale-red text tone */
-  --border: #e7e6e1;           /* ultra-light warm divider */
-  --input: #e2e1db;
-  --ring: #17171a;
+  --secondary: #1c1c22;
+  --secondary-foreground: #f3f3f6;
+  --muted: #1a1a20;
+  --muted-foreground: #9494a0;
+  --accent: #222229;
+  --accent-foreground: #f3f3f6;
+  --destructive: #f0556b;
+  --border: #26262e;
+  --input: #2a2a33;
+  --ring: #6d5efc;
+
+  --sidebar: #101014;
+  --elevated: #1b1b22;
 }
 
 @theme inline {
-  --font-sans: "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
-  --font-serif: "Newsreader", "Playfair Display", Georgia, serif;
+  --font-sans: "SF Pro Display", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 
   --color-background: var(--background);
@@ -53,9 +56,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 2px);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
+  --color-sidebar: var(--sidebar);
+  --color-elevated: var(--elevated);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
@@ -70,23 +76,34 @@
     -moz-osx-font-smoothing: grayscale;
   }
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #dcdbd5;
-    border-radius: 4px;
+    background: #2c2c35;
+    border-radius: 5px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a45;
   }
 }
 
-/* Editorial serif display for page titles. */
+/* Bold sans display for page/section titles. */
 .font-display {
-  font-family: var(--font-serif);
   letter-spacing: -0.02em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* Quiet scroll/mount entry for each view. */
+/* Hide scrollbar on horizontal media rails. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Quiet mount entry per view. */
 main > section {
   animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -99,12 +116,4 @@ main > section {
     opacity: 1;
     transform: none;
   }
-}
-
-/* Muted pastel status tokens (used sparingly for badges/dots). */
-.pastel-green {
-  color: #346538;
-}
-.pastel-red {
-  color: #9f2f2d;
 }
