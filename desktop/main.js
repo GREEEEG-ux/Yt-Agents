@@ -51,7 +51,10 @@ function createWindow() {
       contextIsolation: true,
     },
   });
-  mainWindow.loadURL(BASE_URL);
+  // Vide le cache HTTP avant de charger, pour toujours servir le dernier build.
+  mainWindow.webContents.session.clearCache().finally(() => {
+    mainWindow.loadURL(BASE_URL);
+  });
 }
 
 app.whenReady().then(async () => {

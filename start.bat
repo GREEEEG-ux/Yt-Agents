@@ -3,12 +3,10 @@ REM Lanceur tout-en-un pour yt-shorts-agent (backend FastAPI + dashboard Electro
 cd /d "%~dp0"
 
 echo [1/2] Build du dashboard (frontend)...
-if not exist "dashboard\index.html" (
-    cd frontend
-    call npm install
-    call npm run build
-    cd ..
-)
+cd frontend
+if not exist "node_modules" call npm install
+call npm run build
+cd ..
 
 echo [2/2] Lancement de l'application...
 cd desktop
