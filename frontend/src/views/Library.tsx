@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { HistoryRow, EmptyState } from "@/components/HistoryRow";
 import { api, type HistoryEntry } from "@/lib/api";
 
@@ -27,8 +28,8 @@ export function Library() {
 
   return (
     <section>
-      <h1 className="text-lg font-semibold tracking-tight mb-6">Bibliothèque</h1>
-      <Card className="py-0 divide-y divide-border">
+      <PageHeader title="Bibliothèque" intro="Toutes tes vidéos générées, prêtes à publier ou à retirer." />
+      <Card className="py-0 divide-y divide-border shadow-none overflow-hidden">
         {history.length === 0 && <EmptyState>Aucune vidéo encore.</EmptyState>}
         {history.map((entry) => (
           <HistoryRow

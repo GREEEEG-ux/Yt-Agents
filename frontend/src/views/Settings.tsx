@@ -1,20 +1,45 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { PageHeader, SectionLabel } from "@/components/PageHeader";
 import { api, type ConfigStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+const GROUPS: { label: string; keys: (keyof ConfigStatus)[] }[] = [
+  { label: "Intelligence & transcription", keys: ["groq", "assemblyai", "deepgram"] },
+  { label: "Sources visuelles", keys: ["pexels", "pixabay"] },
+  { label: "Voix & montage", keys: ["piper_exe", "piper_voice", "ffmpeg"] },
+  { label: "Publication YouTube", keys: ["client_secret", "token"] },
+];
+
 const LABELS: Record<keyof ConfigStatus, string> = {
-  groq: "Clé Groq (script IA)",
-  pexels: "Clé Pexels (vidéos libres)",
-  pixabay: "Clé Pixabay (vidéos libres)",
-  assemblyai: "Clé AssemblyAI (transcription)",
-  deepgram: "Clé Deepgram (transcription)",
+  groq: "Groq — génération de script",
+  pexels: "Pexels — vidéos libres",
+  pixabay: "Pixabay — vidéos libres",
+  assemblyai: "AssemblyAI — transcription",
+  deepgram: "Deepgram — transcription",
   piper_exe: "Piper TTS installé",
   piper_voice: "Modèle de voix Piper",
   ffmpeg: "FFmpeg détecté",
   client_secret: "OAuth YouTube configuré",
   token: "Connexion YouTube active",
 };
+
+function Row({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-3.5">
+      <span className="text-sm">{label}</span>
+      <span
+        className={cn(
+          "inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-full",
+          ok ? "bg-[#edf3ec] pastel-green" : "bg-[#fdebec] pastel-red"
+        )}
+      >
+        <span className={cn("w-1.5 h-1.5 rounded-full", ok ? "bg-[#346538]" : "bg-[#9f2f2d]")} />
+        {ok ? "Connecté" : "Manquant"}
+      </span>
+    </div>
+  );
+}
 
 export function Settings() {
   const [status, setStatus] = useState<ConfigStatus | null>(null);
@@ -24,30 +49,22 @@ export function Settings() {
   }, []);
 
   return (
-    <section className="max-w-lg">
-      <h1 className="text-lg font-semibold tracking-tight mb-6">Réglages</h1>
-      <Card className="py-0 divide-y divide-border">
+    <section className="max-w-xl">
+      <PageHeader title="Réglages" intro="État des clés API et des dépendances locales." />
+
+      <div className="space-y-8">
         {status &&
-          (Object.keys(LABELS) as (keyof ConfigStatus)[]).map((key) => (
-            <div key={key} className="flex items-center justify-between px-4 py-3">
-              <span>{LABELS[key]}</span>
-              <span
-                className={cn(
-                  "flex items-center gap-2 text-xs",
-                  status[key] ? "text-emerald-400" : "text-red-400"
-                )}
-              >
-                <span
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full",
-                    status[key] ? "bg-emerald-400" : "bg-red-400"
-                  )}
-                />
-                {status[key] ? "Connecté" : "Manquant"}
-              </span>
+          GROUPS.map((group) => (
+            <div key={group.label}>
+              <SectionLabel>{group.label}</SectionLabel>
+              <Card className="py-0 divide-y divide-border shadow-none overflow-hidden">
+                {group.keys.map((key) => (
+                  <Row key={key} label={LABELS[key]} ok={status[key]} />
+                ))}
+              </Card>
             </div>
           ))}
-      </Card>
+      </div>
     </section>
   );
 }

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useJob } from "@/lib/JobContext";
+import { PageHeader } from "@/components/PageHeader";
 import { SubtitlePreview } from "@/components/SubtitlePreview";
 import {
   type GenerateMode,
@@ -110,9 +111,12 @@ export function Create() {
 
   return (
     <section className="max-w-lg">
-      <h1 className="text-lg font-semibold tracking-tight mb-6">Nouvelle génération</h1>
+      <PageHeader
+        title="Nouvelle génération"
+        intro="Choisis un mode, règle les options, prévisualise avant de publier."
+      />
 
-      <Card className="p-5 gap-4 border-l-2 border-l-primary">
+      <Card className="p-6 gap-5 shadow-none">
         <div className="space-y-1.5">
           <FieldLabel>Mode</FieldLabel>
           <Select value={mode} onValueChange={(v) => setMode(v as GenerateMode)}>

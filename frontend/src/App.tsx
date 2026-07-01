@@ -29,40 +29,45 @@ function AppShell() {
 
   return (
     <div className="min-h-screen text-[13px]">
-      <header className="border-b sticky top-0 z-10 bg-background/95 backdrop-blur">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
-            <span className="font-semibold tracking-tight text-[15px]">yt-shorts-agent</span>
+      <header className="border-b border-border sticky top-0 z-10 bg-background/80 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 bg-primary" />
+            <span className="font-medium tracking-tight text-[14px]">
+              Shorts<span className="text-muted-foreground"> Studio</span>
+            </span>
           </div>
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-1">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setView(tab.id)}
                 className={cn(
-                  "py-1 px-1 border-b-2 transition-colors flex items-center gap-1.5",
+                  "px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5",
                   view === tab.id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab.label}
                 {tab.id === "create" && status === "running" && (
-                  <span className="text-[10px] font-mono text-primary">{percent}%</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">{percent}%</span>
                 )}
               </button>
             ))}
           </nav>
         </div>
         {status === "running" && (
-          <div className="h-0.5 bg-muted">
-            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
+          <div className="h-px bg-border">
+            <div
+              className="h-full bg-primary transition-all duration-500"
+              style={{ width: `${percent}%` }}
+            />
           </div>
         )}
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-8 py-14">
         {view === "home" && <Home onCreate={() => setView("create")} />}
         {view === "create" && <Create />}
         {view === "seo" && <SeoTool />}

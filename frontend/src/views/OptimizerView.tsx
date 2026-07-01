@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api, type OptimizerReport } from "@/lib/api";
+import { PageHeader } from "@/components/PageHeader";
 import { BarChart3, Loader2, AlertTriangle, TrendingUp, TrendingDown, Check } from "lucide-react";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -100,11 +101,10 @@ export function OptimizerView() {
 
   return (
     <section className="max-w-2xl">
-      <h1 className="text-lg font-semibold tracking-tight mb-1">Optimizer</h1>
-      <p className="text-[12px] text-muted-foreground mb-4">
-        Analyse les métriques de tes derniers Shorts (rétention, sources de trafic, engagement)
-        et propose des améliorations SEO et éditoriales basées sur tes vraies données.
-      </p>
+      <PageHeader
+        title="Optimizer"
+        intro="Analyse rétention, trafic et engagement de tes Shorts, puis propose des améliorations basées sur tes vraies données."
+      />
 
       <Button disabled={loading} onClick={run}>
         {loading ? <Loader2 className="size-4 animate-spin" /> : <BarChart3 className="size-4" />}

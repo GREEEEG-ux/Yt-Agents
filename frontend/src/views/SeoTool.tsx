@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { api, type SeoResult } from "@/lib/api";
+import { PageHeader } from "@/components/PageHeader";
 import { Copy, Check, Loader2, Sparkles } from "lucide-react";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -76,13 +77,12 @@ export function SeoTool() {
 
   return (
     <section className="max-w-lg">
-      <h1 className="text-lg font-semibold tracking-tight mb-1">Outil SEO</h1>
-      <p className="text-[12px] text-muted-foreground mb-6">
-        Titre, description, hashtags et tags optimisés pour YouTube Shorts. Titre et hashtags
-        toujours en anglais ; la niche est déduite automatiquement si tu la laisses vide.
-      </p>
+      <PageHeader
+        title="Outil SEO"
+        intro="Titre, description, hashtags et tags optimisés. Titre et hashtags en anglais ; niche déduite automatiquement si laissée vide."
+      />
 
-      <Card className="p-5 gap-4 border-l-2 border-l-primary">
+      <Card className="p-6 gap-5 shadow-none">
         <div className="space-y-1.5">
           <FieldLabel>Sujet</FieldLabel>
           <Input

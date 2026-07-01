@@ -1,52 +1,40 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* ---------------------------------------------------------------------------
+   Premium utilitarian minimalism — warm monochrome, editorial typography.
+   Canvas: warm bone. Text: charcoal. Accent: charcoal CTA + muted pastels.
+--------------------------------------------------------------------------- */
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.13 0.01 270);
-  --foreground: oklch(0.92 0.01 270);
-  --card: oklch(0.17 0.01 270);
-  --card-foreground: oklch(0.92 0.01 270);
-  --popover: oklch(0.17 0.01 270);
-  --popover-foreground: oklch(0.92 0.01 270);
-  --primary: oklch(0.65 0.22 290);
-  --primary-foreground: oklch(0.13 0.01 270);
-  --secondary: oklch(0.22 0.01 270);
-  --secondary-foreground: oklch(0.92 0.01 270);
-  --muted: oklch(0.2 0.01 270);
-  --muted-foreground: oklch(0.6 0.02 270);
-  --accent: oklch(0.24 0.02 270);
-  --accent-foreground: oklch(0.92 0.01 270);
-  --destructive: oklch(0.6 0.21 25);
-  --border: oklch(0.24 0.01 270);
-  --input: oklch(0.24 0.01 270);
-  --ring: oklch(0.65 0.22 290);
-}
+  --radius: 0.5rem;
 
-.dark {
-  --background: oklch(0.13 0.01 270);
-  --foreground: oklch(0.92 0.01 270);
-  --card: oklch(0.17 0.01 270);
-  --card-foreground: oklch(0.92 0.01 270);
-  --popover: oklch(0.17 0.01 270);
-  --popover-foreground: oklch(0.92 0.01 270);
-  --primary: oklch(0.65 0.22 290);
-  --primary-foreground: oklch(0.13 0.01 270);
-  --secondary: oklch(0.22 0.01 270);
-  --secondary-foreground: oklch(0.92 0.01 270);
-  --muted: oklch(0.2 0.01 270);
-  --muted-foreground: oklch(0.6 0.02 270);
-  --accent: oklch(0.24 0.02 270);
-  --accent-foreground: oklch(0.92 0.01 270);
-  --destructive: oklch(0.6 0.21 25);
-  --border: oklch(0.24 0.01 270);
-  --input: oklch(0.24 0.01 270);
-  --ring: oklch(0.65 0.22 290);
+  --background: #f7f6f3;       /* warm bone canvas */
+  --foreground: #2f3437;       /* charcoal */
+  --card: #ffffff;
+  --card-foreground: #2f3437;
+  --popover: #ffffff;
+  --popover-foreground: #2f3437;
+  --primary: #17171a;          /* near-black CTA */
+  --primary-foreground: #ffffff;
+  --secondary: #f0efea;
+  --secondary-foreground: #2f3437;
+  --muted: #f0efea;
+  --muted-foreground: #787774; /* muted gray */
+  --accent: #efeee9;
+  --accent-foreground: #2f3437;
+  --destructive: #9f2f2d;      /* pale-red text tone */
+  --border: #e7e6e1;           /* ultra-light warm divider */
+  --input: #e2e1db;
+  --ring: #17171a;
 }
 
 @theme inline {
+  --font-sans: "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  --font-serif: "Newsreader", "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -65,17 +53,58 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #dcdbd5;
+    border-radius: 4px;
+  }
+}
+
+/* Editorial serif display for page titles. */
+.font-display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+
+/* Quiet scroll/mount entry for each view. */
+main > section {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Muted pastel status tokens (used sparingly for badges/dots). */
+.pastel-green {
+  color: #346538;
+}
+.pastel-red {
+  color: #9f2f2d;
 }
