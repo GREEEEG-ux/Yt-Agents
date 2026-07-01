@@ -25,6 +25,8 @@ import {
   type TranscriptionEngine,
   type VideoQuality,
   type SubtitleMode,
+  type LlmEngine,
+  type VoiceEngine,
 } from "@/lib/api";
 
 type ScriptMode = "manual" | "ai";
@@ -51,6 +53,9 @@ export function Create() {
   const [clipDuration, setClipDuration] = useState(30);
   const [videoFormat, setVideoFormat] = useState<VideoFormat>("short");
   const [videoQuality, setVideoQuality] = useState<VideoQuality>("best");
+
+  const [llmEngine, setLlmEngine] = useState<LlmEngine>("groq");
+  const [voiceEngine, setVoiceEngine] = useState<VoiceEngine>("piper");
 
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [language, setLanguage] = useState<Language>("fr");
@@ -80,8 +85,10 @@ export function Create() {
     subtitle_max_words: subMaxWords,
   };
 
+  const engineFields = { llm_engine: llmEngine, voice_engine: voiceEngine };
+
   async function startGeneration() {
-    let req: GenerateRequest = { mode, topic, film, ...subtitleFields };
+    let req: GenerateRequest = { mode, topic, film, ...subtitleFields, ...engineFields };
     let file: File | null = null;
 
     if (mode === "clip") {
@@ -102,6 +109,7 @@ export function Create() {
         script_text: voiceEnabled && scriptMode === "manual" ? scriptText : null,
         topic: voiceEnabled && scriptMode === "ai" ? scriptTopic : null,
         ...subtitleFields,
+        ...engineFields,
       };
     }
 
@@ -128,6 +136,20 @@ export function Create() {
               <SelectItem value="topic">Sujet imposé</SelectItem>
               <SelectItem value="film">Analyse de film / série</SelectItem>
               <SelectItem value="clip">Auto-clip depuis un lien / fichier</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <FieldLabel>Modèle IA (script)</FieldLabel>
+          <Select value={llmEngine} onValueChange={(v) => setLlmEngine(v as LlmEngine)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="groq">Groq — Llama 3.3 (gratuit)</SelectItem>
+              <SelectItem value="mistral">Mistral — Large</SelectItem>
+              <SelectItem value="openai">ChatGPT — GPT-4o mini</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -219,7 +241,8 @@ export function Create() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="short">YouTube Short (9:16 vertical)</SelectItem>
+                  <SelectItem value="short">YouTube Short — plein cadre 9:16 (recadré)</SelectItem>
+                  <SelectItem value="blur">YouTube Short — vidéo centrée, haut/bas flou</SelectItem>
                   <SelectItem value="video">Vidéo YouTube classique (format d'origine)</SelectItem>
                 </SelectContent>
               </Select>
@@ -232,6 +255,18 @@ export function Create() {
 
             {voiceEnabled ? (
               <div className="space-y-4 pl-3 border-l border-border">
+                <div className="space-y-1.5">
+                  <FieldLabel>Moteur de voix</FieldLabel>
+                  <Select value={voiceEngine} onValueChange={(v) => setVoiceEngine(v as VoiceEngine)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="piper">Piper (local, gratuit)</SelectItem>
+                      <SelectItem value="elevenlabs">ElevenLabs (cloud, premium)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1.5">
                   <FieldLabel>Langue de la voix</FieldLabel>
                   <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>

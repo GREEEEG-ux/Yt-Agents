@@ -46,6 +46,8 @@ class GenerateRequest(BaseModel):
     subtitle_color: str = "#FFFFFF"
     subtitle_mode: str = "sentence"
     subtitle_max_words: int = 6
+    llm_engine: str = "groq"
+    voice_engine: str = "piper"
     auto_upload: bool = True
 
 
@@ -100,6 +102,9 @@ def get_config_status():
         "pixabay": bool(config.PIXABAY_API_KEY),
         "assemblyai": bool(config.ASSEMBLYAI_API_KEY),
         "deepgram": bool(config.DEEPGRAM_API_KEY),
+        "mistral": bool(config.MISTRAL_API_KEY),
+        "openai": bool(config.OPENAI_API_KEY),
+        "elevenlabs": bool(config.ELEVENLABS_API_KEY),
         "piper_exe": os.path.exists(config.PIPER_EXE),
         "piper_voice": os.path.exists(config.PIPER_VOICE_MODEL),
         "ffmpeg": shutil.which("ffmpeg") is not None,
@@ -135,6 +140,8 @@ def generate(req: GenerateRequest):
             "mode": req.subtitle_mode,
             "max_words": req.subtitle_max_words,
         },
+        llm_engine=req.llm_engine,
+        voice_engine=req.voice_engine,
         auto_upload=req.auto_upload,
     )
     return {"job_id": job_id}

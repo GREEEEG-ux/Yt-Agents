@@ -23,6 +23,9 @@ export type ConfigStatus = {
   pixabay: boolean;
   assemblyai: boolean;
   deepgram: boolean;
+  mistral: boolean;
+  openai: boolean;
+  elevenlabs: boolean;
   piper_exe: boolean;
   piper_voice: boolean;
   ffmpeg: boolean;
@@ -33,11 +36,13 @@ export type ConfigStatus = {
 export type GenerateMode = "free" | "topic" | "film" | "clip";
 
 export type ClipMode = "manual" | "speech" | "first";
-export type VideoFormat = "short" | "video";
+export type VideoFormat = "short" | "blur" | "video";
 export type Language = "fr" | "en";
 export type TranscriptionEngine = "whisper" | "assemblyai" | "deepgram";
 export type VideoQuality = "best" | "1080" | "720" | "480" | "360";
 export type SubtitleMode = "sentence" | "word";
+export type LlmEngine = "groq" | "mistral" | "openai";
+export type VoiceEngine = "piper" | "elevenlabs";
 
 export type GenerateRequest = {
   mode: GenerateMode;
@@ -60,6 +65,8 @@ export type GenerateRequest = {
   subtitle_color?: string;
   subtitle_mode?: SubtitleMode;
   subtitle_max_words?: number;
+  llm_engine?: LlmEngine;
+  voice_engine?: VoiceEngine;
   auto_upload?: boolean;
 };
 

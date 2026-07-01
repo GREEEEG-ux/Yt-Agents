@@ -1,9 +1,7 @@
 import json
 import re
-from groq import Groq
+import requests
 import config
-
-client = Groq(api_key=config.GROQ_API_KEY)
 
 # ---------------------------------------------------------------------------
 # Bloc SEO partagé par tous les prompts.
@@ -135,17 +133,17 @@ Ne donne aucun texte hors du JSON."""
 # Génération
 # ---------------------------------------------------------------------------
 
-def generate_script(topic=None):
+def generate_script(topic=None, engine="groq"):
     prompt = TOPIC_PROMPT.format(topic=topic) if topic else DEFAULT_PROMPT
-    return _finalize_seo(_call_groq(prompt))
+    return _finalize_seo(_call_llm(prompt, engine=engine))
 
 
-def generate_film_analysis_script(film):
-    return _finalize_seo(_call_groq(FILM_ANALYSIS_PROMPT.format(film=film)))
+def generate_film_analysis_script(film, engine="groq"):
+    return _finalize_seo(_call_llm(FILM_ANALYSIS_PROMPT.format(film=film), engine=engine))
 
 
-def generate_metadata_for_script(script):
-    data = _finalize_seo(_call_groq(METADATA_PROMPT.format(script=script)))
+def generate_metadata_for_script(script, engine="groq"):
+    data = _finalize_seo(_call_llm(METADATA_PROMPT.format(script=script), engine=engine))
     data["script"] = script
     return data
 
@@ -233,10 +231,17 @@ def _finalize_seo(data):
 
 
 # ---------------------------------------------------------------------------
-# Appel Groq
+# Appel LLM multi-fournisseurs (API compatibles OpenAI : Groq / Mistral / OpenAI)
 # ---------------------------------------------------------------------------
 
 MAX_RETRIES = 3
+
+# (base_url, modèle, fonction qui renvoie la clé)
+LLM_PROVIDERS = {
+    "groq": ("https://api.groq.com/openai/v1", "llama-3.3-70b-versatile", lambda: config.GROQ_API_KEY),
+    "mistral": ("https://api.mistral.ai/v1", "mistral-large-latest", lambda: config.MISTRAL_API_KEY),
+    "openai": ("https://api.openai.com/v1", "gpt-4o-mini", lambda: config.OPENAI_API_KEY),
+}
 
 
 def _strip_code_fence(content):
@@ -249,17 +254,33 @@ def _strip_code_fence(content):
     return content.strip()
 
 
-def _call_groq(prompt, temperature=0.9):
+def _call_llm(prompt, engine="groq", temperature=0.9):
+    base, model, key_fn = LLM_PROVIDERS.get(engine, LLM_PROVIDERS["groq"])
+    key = key_fn()
+    if not key:
+        raise RuntimeError(f"Clé API manquante pour le moteur '{engine}'.")
+
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    body = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
+    }
+
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
-        )
-        content = _strip_code_fence(response.choices[0].message.content)
+        resp = requests.post(f"{base}/chat/completions", headers=headers, json=body, timeout=90)
+        resp.raise_for_status()
+        content = _strip_code_fence(resp.json()["choices"][0]["message"]["content"])
         try:
             return json.loads(content)
         except json.JSONDecodeError as e:
             last_error = e
-    raise RuntimeError(f"Groq n'a pas renvoyé de JSON valide après {MAX_RETRIES} tentatives") from last_error
+    raise RuntimeError(
+        f"Le moteur '{engine}' n'a pas renvoyé de JSON valide après {MAX_RETRIES} tentatives"
+    ) from last_error
+
+
+def _call_groq(prompt, temperature=0.9):
+    """Conservé pour compatibilité (seo_optimizer_agent)."""
+    return _call_llm(prompt, engine="groq", temperature=temperature)

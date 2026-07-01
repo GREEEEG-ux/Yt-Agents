@@ -40,6 +40,8 @@ def start_generation(
     video_format="short",
     video_quality="best",
     subtitle_style=None,
+    llm_engine="groq",
+    voice_engine="piper",
     auto_upload=True,
 ):
     job_id = str(uuid.uuid4())
@@ -56,9 +58,9 @@ def start_generation(
     def worker():
         try:
             if mode == "film":
-                result = pipeline.run(film=film, subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(film=film, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "topic":
-                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "clip":
                 result = pipeline.run_from_clip(
                     source_url=source_url,
@@ -76,11 +78,13 @@ def start_generation(
                     video_format=video_format,
                     video_quality=video_quality,
                     subtitle_style=subtitle_style,
+                    llm_engine=llm_engine,
+                    voice_engine=voice_engine,
                     auto_upload=auto_upload,
                     on_progress=on_progress,
                 )
             else:
-                result = pipeline.run(subtitle_style=subtitle_style, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
 
             if result is None:
                 q.put({"type": "skipped", "message": "Sujet déjà utilisé, génération arrêtée."})

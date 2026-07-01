@@ -5,20 +5,24 @@ import { api, type ConfigStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const GROUPS: { label: string; keys: (keyof ConfigStatus)[] }[] = [
-  { label: "Intelligence & transcription", keys: ["groq", "assemblyai", "deepgram"] },
+  { label: "Modèles IA (script)", keys: ["groq", "mistral", "openai"] },
+  { label: "Transcription", keys: ["assemblyai", "deepgram"] },
   { label: "Sources visuelles", keys: ["pexels", "pixabay"] },
-  { label: "Voix & montage", keys: ["piper_exe", "piper_voice", "ffmpeg"] },
+  { label: "Voix & montage", keys: ["piper_exe", "piper_voice", "elevenlabs", "ffmpeg"] },
   { label: "Publication YouTube", keys: ["client_secret", "token"] },
 ];
 
 const LABELS: Record<keyof ConfigStatus, string> = {
-  groq: "Groq — génération de script",
+  groq: "Groq — Llama 3.3 (gratuit)",
+  mistral: "Mistral — Large",
+  openai: "ChatGPT — GPT-4o mini",
   pexels: "Pexels — vidéos libres",
   pixabay: "Pixabay — vidéos libres",
   assemblyai: "AssemblyAI — transcription",
   deepgram: "Deepgram — transcription",
   piper_exe: "Piper TTS installé",
   piper_voice: "Modèle de voix Piper",
+  elevenlabs: "ElevenLabs — voix premium",
   ffmpeg: "FFmpeg détecté",
   client_secret: "OAuth YouTube configuré",
   token: "Connexion YouTube active",

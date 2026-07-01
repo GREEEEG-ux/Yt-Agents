@@ -52,12 +52,13 @@ def publish_built(video_path, title, description, tags, topic, as_short=True, on
     return {"video_id": video_id, "topic": topic, "title": title}
 
 
-def run(topic=None, film=None, subtitle_style=None, auto_upload=True, on_progress=print):
+def run(topic=None, film=None, subtitle_style=None, auto_upload=True,
+        llm_engine="groq", voice_engine="piper", on_progress=print):
     on_progress("1/6 - Génération du script...")
     if film:
-        data = script_agent.generate_film_analysis_script(film)
+        data = script_agent.generate_film_analysis_script(film, engine=llm_engine)
     else:
-        data = script_agent.generate_script(topic)
+        data = script_agent.generate_script(topic, engine=llm_engine)
 
     if storage_agent.topic_already_used(data["topic"]):
         on_progress(f"Sujet déjà utilisé : {data['topic']}. Arrêt.")
@@ -71,7 +72,7 @@ def run(topic=None, film=None, subtitle_style=None, auto_upload=True, on_progres
     image_paths = image_agent.generate_images_for_segments(captions)
 
     on_progress("3/6 - Génération de la voix...")
-    audio_path = voice_agent.generate_voice(data["script"])
+    audio_path = voice_agent.generate_voice(data["script"], engine=voice_engine)
 
     on_progress("4/6 - Montage de la vidéo...")
     video_path = edit_agent.build_video_from_images(image_paths, captions, audio_path, subtitle_style=subtitle_style)
@@ -109,6 +110,8 @@ def run_from_clip(
     video_format="short",
     video_quality="best",
     subtitle_style=None,
+    llm_engine="groq",
+    voice_engine="piper",
     auto_upload=True,
     on_progress=print,
 ):
@@ -129,15 +132,15 @@ def run_from_clip(
     if voice_enabled:
         on_progress("3/7 - Préparation du script...")
         if script_text:
-            data = script_agent.generate_metadata_for_script(script_text)
+            data = script_agent.generate_metadata_for_script(script_text, engine=llm_engine)
         elif topic_for_script:
-            data = script_agent.generate_script(topic_for_script)
+            data = script_agent.generate_script(topic_for_script, engine=llm_engine)
         else:
             raise ValueError("Voix off activée : fournis un script manuel ou un sujet.")
         captions = subtitle_agent.split_into_segments(data["script"])
 
         on_progress(f"4/7 - Génération de la voix ({language})...")
-        audio_path = voice_agent.generate_voice(data["script"], language=language)
+        audio_path = voice_agent.generate_voice(data["script"], language=language, engine=voice_engine)
     else:
         on_progress("3/7 - Sous-titres / métadonnées...")
         transcript_text = ""
@@ -149,7 +152,7 @@ def run_from_clip(
             transcript_text = " ".join(s["text"] for s in timed_segments)
 
         basis = transcript_text or topic_for_script or "Clip vidéo"
-        data = script_agent.generate_metadata_for_script(basis)
+        data = script_agent.generate_metadata_for_script(basis, engine=llm_engine)
         on_progress("4/7 - (voix off désactivée, audio d'origine conservé)")
 
     if storage_agent.topic_already_used(data["topic"]):
@@ -170,12 +173,12 @@ def run_from_clip(
 
     if not auto_upload:
         on_progress("Prévisualisation prête.")
-        return _preview_result(video_path, data, as_short=(video_format == "short"))
+        return _preview_result(video_path, data, as_short=(video_format != "video"))
 
     label = "Short" if video_format == "short" else "vidéo"
     on_progress(f"6/7 - Upload sur YouTube ({label}, privé)...")
     video_id = upload_agent.upload_video(
-        video_path, data["title"], data["description"], data["tags"], as_short=(video_format == "short")
+        video_path, data["title"], data["description"], data["tags"], as_short=(video_format != "video")
     )
 
     on_progress("7/7 - Sauvegarde de l'historique...")

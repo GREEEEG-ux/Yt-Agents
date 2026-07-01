@@ -122,6 +122,35 @@ def _fit_short(video):
     return video
 
 
+def _blur_fill(input_path):
+    """Génère un 1080x1920 : vidéo centrée + haut/bas remplis par une copie
+    floutée et agrandie de la vidéo (fond flou aux couleurs de la vidéo).
+    Conserve l'audio d'origine. Rapide (FFmpeg natif)."""
+    import subprocess
+
+    output_path = os.path.join(config.VIDEOS_DIR, "blurfill.mp4")
+    w, h = config.VIDEO_WIDTH, config.VIDEO_HEIGHT
+    filter_complex = (
+        f"[0:v]split=2[bg][fg];"
+        f"[bg]scale={w}:{h}:force_original_aspect_ratio=increase,"
+        f"crop={w}:{h},boxblur=luma_radius=48:luma_power=1,eq=brightness=-0.06[bgb];"
+        f"[fg]scale={w}:{h}:force_original_aspect_ratio=decrease[fgs];"
+        f"[bgb][fgs]overlay=(W-w)/2:(H-h)/2[v]"
+    )
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-i", input_path,
+            "-filter_complex", filter_complex,
+            "-map", "[v]", "-map", "0:a?",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+            output_path,
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return output_path
+
+
 def _scene_image(image_path, duration, is_first):
     clip = ImageClip(image_path).with_duration(duration)
     clip = clip.with_effects([Resize(height=config.VIDEO_HEIGHT)])
@@ -174,11 +203,16 @@ def build_video_from_clip(
     - audio_path donné → voix off TTS, la vidéo est bouclée/coupée à sa durée.
     - timed_segments   → sous-titres synchronisés [{start, end, text}] (transcription).
     - captions         → sous-titres répartis uniformément (liste de phrases).
-    - video_format     → "short" (9:16 recadré) ou "video" (aspect d'origine conservé).
+    - video_format     → "short" (9:16 recadré plein cadre),
+                          "blur" (vidéo centrée + fond flou aux couleurs de la vidéo),
+                          "video" (aspect d'origine conservé).
     - subtitle_style   → {font_size, color, mode, max_words}.
     """
     style = _style(subtitle_style)
-    video = VideoFileClip(video_path)
+
+    # Le fond flou est produit en amont par FFmpeg (déjà en 1080x1920, audio conservé).
+    source = _blur_fill(video_path) if video_format == "blur" else video_path
+    video = VideoFileClip(source)
     audio = None
 
     if audio_path:
