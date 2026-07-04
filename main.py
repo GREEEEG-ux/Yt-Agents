@@ -189,9 +189,59 @@ def run_from_clip(
     return {"video_id": video_id, "topic": data["topic"], "title": data["title"]}
 
 
+def run_recap_series(
+    film,
+    num_parts=3,
+    subtitle_style=None,
+    llm_engine="groq",
+    voice_engine="piper",
+    on_progress=print,
+):
+    """Résumé condensé d'un film/série découpé en N Shorts (série de parties).
+    Chaque partie est illustrée par IA (commentaire original, pas d'extrait protégé),
+    montée en 9:16 et uploadée en privé. Renvoie la 1re vidéo + le nombre de parties."""
+    on_progress("Génération du résumé condensé...")
+    series = script_agent.generate_recap_series(film, parts=num_parts, engine=llm_engine)
+    parts = series["parts"]
+    total = len(parts)
+
+    results = []
+    for i, part_script in enumerate(parts):
+        step = i + 1
+        title = f"{series['title']} (Part {step}/{total})"
+
+        on_progress(f"{step}/{total} - Partie {step} : illustrations...")
+        captions = subtitle_agent.split_into_segments(part_script)
+        image_paths = image_agent.generate_images_for_segments(captions)
+
+        on_progress(f"{step}/{total} - Partie {step} : voix + montage...")
+        audio_path = voice_agent.generate_voice(part_script, engine=voice_engine)
+        video_path = edit_agent.build_video_from_images(
+            image_paths, captions, audio_path, subtitle_style=subtitle_style
+        )
+
+        on_progress(f"{step}/{total} - Partie {step} : upload...")
+        video_id = upload_agent.upload_video(
+            video_path, title, series["description"], series["tags"], as_short=True
+        )
+        storage_agent.save_history_entry(series["topic"], title, video_id)
+        _save_thumbnail(video_path, video_id)
+        results.append({"video_id": video_id, "title": title})
+
+    on_progress(f"Terminé. {total} parties uploadées en privé.")
+    first = results[0]
+    return {
+        "video_id": first["video_id"],
+        "title": f"{series['title']} — {total} parties",
+        "topic": series["topic"],
+    }
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if args and args[0] == "film":
         run(film=" ".join(args[1:]))
+    elif args and args[0] == "recap":
+        run_recap_series(film=" ".join(args[1:]))
     else:
         run(topic=" ".join(args) if args else None)

@@ -148,6 +148,49 @@ def generate_metadata_for_script(script, engine="groq"):
     return data
 
 
+RECAP_PROMPT = """Tu es un scénariste spécialisé dans les résumés condensés de films et séries pour YouTube Shorts, au format "récap en plusieurs parties" (série de Shorts qui se suivent).
+
+Fais un résumé CONDENSÉ et captivant de : "{film}", découpé en EXACTEMENT {parts} parties qui s'enchaînent et couvrent toute l'histoire, du début à la fin.
+
+Règles impératives :
+- Chaque partie = un script parlé de 20 à 40 secondes, autonome mais qui appelle la partie suivante.
+- La partie 1 commence par un HOOK très fort. Chaque partie (sauf la dernière) se termine par un cliffhanger qui donne envie de voir la suite.
+- Résumé/commentaire 100% ORIGINAL : décris l'intrigue avec tes propres mots, AUCUNE citation mot pour mot.
+- Phrases courtes, rythme rapide, ton immersif de conteur. Aucun emoji.
+- Réparti l'intrigue de façon équilibrée sur les {parts} parties (début → milieu → fin).
+
+""" + _SEO_RULES + """
+
+Réponds STRICTEMENT en JSON avec ces clés :
+{{
+  "topic": "titre du film/série + 'récap'",
+  "parts": ["script de la partie 1", "script de la partie 2", "... {parts} scripts au total"],
+""" + _SEO_KEYS + """
+}}
+Ne donne aucun texte hors du JSON."""
+
+
+def generate_recap_series(film, parts=3, engine="groq"):
+    """Génère un résumé condensé d'un film/série découpé en N parties.
+
+    Retourne {topic, title, description, tags, parts:[script1, script2, ...]}.
+    Les métadonnées SEO (description/tags/hashtags) sont partagées par toutes les parties.
+    """
+    parts = max(2, min(int(parts), 6))
+    raw = _call_llm(RECAP_PROMPT.format(film=film, parts=parts), engine=engine)
+    seo = _finalize_seo(raw)
+    scripts = [str(s).strip() for s in (raw.get("parts") or []) if str(s).strip()]
+    if not scripts:
+        raise RuntimeError("Le résumé n'a renvoyé aucune partie.")
+    return {
+        "topic": seo["topic"],
+        "title": seo["title"],
+        "description": seo["description"],
+        "tags": seo["tags"],
+        "parts": scripts,
+    }
+
+
 def generate_seo_metadata(topic="", script="", niche=""):
     """Outil SEO à la demande : renvoie le détail complet (titre, description,
     hashtags principaux/secondaires, tags, hooks) + une description assemblée."""

@@ -42,6 +42,7 @@ def start_generation(
     subtitle_style=None,
     llm_engine="groq",
     voice_engine="piper",
+    num_parts=3,
     auto_upload=True,
 ):
     job_id = str(uuid.uuid4())
@@ -57,7 +58,16 @@ def start_generation(
 
     def worker():
         try:
-            if mode == "film":
+            if mode == "recap":
+                result = pipeline.run_recap_series(
+                    film=film,
+                    num_parts=num_parts,
+                    subtitle_style=subtitle_style,
+                    llm_engine=llm_engine,
+                    voice_engine=voice_engine,
+                    on_progress=on_progress,
+                )
+            elif mode == "film":
                 result = pipeline.run(film=film, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "topic":
                 result = pipeline.run(topic=topic, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)

@@ -45,6 +45,7 @@ export function Create() {
   const [mode, setMode] = useState<GenerateMode>("free");
   const [topic, setTopic] = useState("");
   const [film, setFilm] = useState("");
+  const [numParts, setNumParts] = useState(3);
 
   const [clipUrl, setClipUrl] = useState("");
   const [clipMine, setClipMine] = useState(false);
@@ -88,7 +89,7 @@ export function Create() {
   const engineFields = { llm_engine: llmEngine, voice_engine: voiceEngine };
 
   async function startGeneration() {
-    let req: GenerateRequest = { mode, topic, film, ...subtitleFields, ...engineFields };
+    let req: GenerateRequest = { mode, topic, film, num_parts: numParts, ...subtitleFields, ...engineFields };
     let file: File | null = null;
 
     if (mode === "clip") {
@@ -135,6 +136,7 @@ export function Create() {
               <SelectItem value="free">Sujet libre</SelectItem>
               <SelectItem value="topic">Sujet imposé</SelectItem>
               <SelectItem value="film">Analyse de film / série</SelectItem>
+              <SelectItem value="recap">Résumé de film/série en plusieurs parties</SelectItem>
               <SelectItem value="clip">Auto-clip depuis un lien / fichier</SelectItem>
             </SelectContent>
           </Select>
@@ -169,6 +171,37 @@ export function Create() {
               value={film}
               onChange={(e) => setFilm(e.target.value)}
             />
+          </div>
+        )}
+
+        {mode === "recap" && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <FieldLabel>Film / série à résumer</FieldLabel>
+              <Input
+                placeholder="Breaking Bad"
+                value={film}
+                onChange={(e) => setFilm(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <FieldLabel>Nombre de parties</FieldLabel>
+              <Select value={String(numParts)} onValueChange={(v) => setNumParts(Number(v))}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2, 3, 4, 5, 6].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} parties
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Résumé condensé et original, découpé en {numParts} Shorts qui se suivent (uploadés en privé). La prévisualisation ne s'applique pas à ce mode.
+            </p>
           </div>
         )}
 

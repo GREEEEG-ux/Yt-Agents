@@ -48,6 +48,7 @@ class GenerateRequest(BaseModel):
     subtitle_max_words: int = 6
     llm_engine: str = "groq"
     voice_engine: str = "piper"
+    num_parts: int = 3
     auto_upload: bool = True
 
 
@@ -142,6 +143,7 @@ def generate(req: GenerateRequest):
         },
         llm_engine=req.llm_engine,
         voice_engine=req.voice_engine,
+        num_parts=req.num_parts,
         auto_upload=req.auto_upload,
     )
     return {"job_id": job_id}

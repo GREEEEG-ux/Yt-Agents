@@ -33,7 +33,7 @@ export type ConfigStatus = {
   token: boolean;
 };
 
-export type GenerateMode = "free" | "topic" | "film" | "clip";
+export type GenerateMode = "free" | "topic" | "film" | "recap" | "clip";
 
 export type ClipMode = "manual" | "speech" | "first";
 export type VideoFormat = "short" | "blur" | "video";
@@ -67,6 +67,7 @@ export type GenerateRequest = {
   subtitle_max_words?: number;
   llm_engine?: LlmEngine;
   voice_engine?: VoiceEngine;
+  num_parts?: number;
   auto_upload?: boolean;
 };
 
