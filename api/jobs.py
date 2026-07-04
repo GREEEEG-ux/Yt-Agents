@@ -42,6 +42,7 @@ def start_generation(
     subtitle_style=None,
     llm_engine="groq",
     voice_engine="piper",
+    voice=None,
     num_parts=3,
     auto_upload=True,
 ):
@@ -64,7 +65,7 @@ def start_generation(
                     num_parts=num_parts,
                     subtitle_style=subtitle_style,
                     llm_engine=llm_engine,
-                    voice_engine=voice_engine,
+                    voice_engine=voice_engine, voice=voice,
                     source_url=source_url,
                     file_path=file_path,
                     mine=mine,
@@ -73,9 +74,9 @@ def start_generation(
                     on_progress=on_progress,
                 )
             elif mode == "film":
-                result = pipeline.run(film=film, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(film=film, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, voice=voice, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "topic":
-                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(topic=topic, subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, voice=voice, auto_upload=auto_upload, on_progress=on_progress)
             elif mode == "clip":
                 result = pipeline.run_from_clip(
                     source_url=source_url,
@@ -94,12 +95,12 @@ def start_generation(
                     video_quality=video_quality,
                     subtitle_style=subtitle_style,
                     llm_engine=llm_engine,
-                    voice_engine=voice_engine,
+                    voice_engine=voice_engine, voice=voice,
                     auto_upload=auto_upload,
                     on_progress=on_progress,
                 )
             else:
-                result = pipeline.run(subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, auto_upload=auto_upload, on_progress=on_progress)
+                result = pipeline.run(subtitle_style=subtitle_style, llm_engine=llm_engine, voice_engine=voice_engine, voice=voice, auto_upload=auto_upload, on_progress=on_progress)
 
             if result is None:
                 q.put({"type": "skipped", "message": "Sujet déjà utilisé, génération arrêtée."})

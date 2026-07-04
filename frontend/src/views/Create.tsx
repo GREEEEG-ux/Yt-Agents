@@ -16,6 +16,7 @@ import {
 import { useJob } from "@/lib/JobContext";
 import { PageHeader } from "@/components/PageHeader";
 import { SubtitlePreview } from "@/components/SubtitlePreview";
+import { VoicePicker } from "@/components/VoicePicker";
 import {
   type GenerateMode,
   type GenerateRequest,
@@ -58,6 +59,8 @@ export function Create() {
   const [llmEngine, setLlmEngine] = useState<LlmEngine>("groq");
   const [voiceEngine, setVoiceEngine] = useState<VoiceEngine>("piper");
 
+  const [voice, setVoice] = useState<string | null>(null);
+
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [language, setLanguage] = useState<Language>("fr");
   const [scriptMode, setScriptMode] = useState<ScriptMode>("manual");
@@ -92,7 +95,7 @@ export function Create() {
     subtitle_max_words: subMaxWords,
   };
 
-  const engineFields = { llm_engine: llmEngine, voice_engine: voiceEngine };
+  const engineFields = { llm_engine: llmEngine, voice_engine: voiceEngine, voice, language };
 
   async function startGeneration() {
     let req: GenerateRequest = { mode, topic, film, num_parts: numParts, ...subtitleFields, ...engineFields };
@@ -125,7 +128,6 @@ export function Create() {
         video_format: videoFormat,
         video_quality: videoQuality,
         voice_enabled: voiceEnabled,
-        language,
         transcription_enabled: !voiceEnabled && transcriptionEnabled,
         transcription_engine: engine,
         script_text: voiceEnabled && scriptMode === "manual" ? scriptText : null,
@@ -176,6 +178,20 @@ export function Create() {
             </SelectContent>
           </Select>
         </div>
+
+        {mode !== "clip" && (
+          <div className="space-y-2 border-t pt-4">
+            <FieldLabel>Voix off</FieldLabel>
+            <VoicePicker
+              engine={voiceEngine}
+              setEngine={setVoiceEngine}
+              language={language}
+              setLanguage={setLanguage}
+              voice={voice}
+              setVoice={setVoice}
+            />
+          </div>
+        )}
 
         {mode === "topic" && (
           <div className="space-y-1.5">
@@ -336,30 +352,14 @@ export function Create() {
 
             {voiceEnabled ? (
               <div className="space-y-4 pl-3 border-l border-border">
-                <div className="space-y-1.5">
-                  <FieldLabel>Moteur de voix</FieldLabel>
-                  <Select value={voiceEngine} onValueChange={(v) => setVoiceEngine(v as VoiceEngine)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="piper">Piper (local, gratuit)</SelectItem>
-                      <SelectItem value="elevenlabs">ElevenLabs (cloud, premium)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <FieldLabel>Langue de la voix</FieldLabel>
-                  <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fr">Français</SelectItem>
-                      <SelectItem value="en">Anglais</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <VoicePicker
+                  engine={voiceEngine}
+                  setEngine={setVoiceEngine}
+                  language={language}
+                  setLanguage={setLanguage}
+                  voice={voice}
+                  setVoice={setVoice}
+                />
                 <div className="space-y-1.5">
                   <FieldLabel>Script</FieldLabel>
                   <Select value={scriptMode} onValueChange={(v) => setScriptMode(v as ScriptMode)}>

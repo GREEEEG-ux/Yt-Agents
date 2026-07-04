@@ -67,9 +67,13 @@ export type GenerateRequest = {
   subtitle_max_words?: number;
   llm_engine?: LlmEngine;
   voice_engine?: VoiceEngine;
+  voice?: string | null;
   num_parts?: number;
   auto_upload?: boolean;
 };
+
+export type VoiceInfo = { id: string; label: string; language?: string };
+export type VoicesResponse = { piper: VoiceInfo[]; elevenlabs: VoiceInfo[] };
 
 export type SeoResult = {
   topic: string;
@@ -203,6 +207,15 @@ export const api = {
 
   generate: (req: GenerateRequest): Promise<{ job_id: string }> =>
     fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    }).then((r) => json(r)),
+
+  getVoices: (): Promise<VoicesResponse> => fetch("/api/voices").then((r) => json<VoicesResponse>(r)),
+
+  previewVoice: (req: { engine: string; voice: string | null; language: string }): Promise<{ url: string }> =>
+    fetch("/api/voice-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),

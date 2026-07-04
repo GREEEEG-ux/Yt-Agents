@@ -53,7 +53,7 @@ def publish_built(video_path, title, description, tags, topic, as_short=True, on
 
 
 def run(topic=None, film=None, subtitle_style=None, auto_upload=True,
-        llm_engine="groq", voice_engine="piper", on_progress=print):
+        llm_engine="groq", voice_engine="piper", voice=None, on_progress=print):
     on_progress("1/6 - Génération du script...")
     if film:
         data = script_agent.generate_film_analysis_script(film, engine=llm_engine)
@@ -72,7 +72,7 @@ def run(topic=None, film=None, subtitle_style=None, auto_upload=True,
     image_paths = image_agent.generate_images_for_segments(captions)
 
     on_progress("3/6 - Génération de la voix...")
-    audio_path = voice_agent.generate_voice(data["script"], engine=voice_engine)
+    audio_path = voice_agent.generate_voice(data["script"], engine=voice_engine, voice=voice)
 
     on_progress("4/6 - Montage de la vidéo...")
     video_path = edit_agent.build_video_from_images(image_paths, captions, audio_path, subtitle_style=subtitle_style)
@@ -112,6 +112,7 @@ def run_from_clip(
     subtitle_style=None,
     llm_engine="groq",
     voice_engine="piper",
+    voice=None,
     auto_upload=True,
     on_progress=print,
 ):
@@ -140,7 +141,7 @@ def run_from_clip(
         captions = subtitle_agent.split_into_segments(data["script"])
 
         on_progress(f"4/7 - Génération de la voix ({language})...")
-        audio_path = voice_agent.generate_voice(data["script"], language=language, engine=voice_engine)
+        audio_path = voice_agent.generate_voice(data["script"], language=language, engine=voice_engine, voice=voice)
     else:
         on_progress("3/7 - Sous-titres / métadonnées...")
         transcript_text = ""
@@ -204,6 +205,7 @@ def run_recap_series(
     subtitle_style=None,
     llm_engine="groq",
     voice_engine="piper",
+    voice=None,
     source_url=None,
     file_path=None,
     mine=False,
@@ -242,7 +244,7 @@ def run_recap_series(
         captions = subtitle_agent.split_into_segments(part_script)
 
         on_progress(f"{step}/{total} - Partie {step} : voix...")
-        audio_path = voice_agent.generate_voice(part_script, engine=voice_engine)
+        audio_path = voice_agent.generate_voice(part_script, engine=voice_engine, voice=voice)
 
         if use_source:
             dur = _audio_duration(audio_path)

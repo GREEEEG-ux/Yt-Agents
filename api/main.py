@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.mount("/videos", StaticFiles(directory=config.FINAL_DIR), name="videos")
 app.mount("/thumbs", StaticFiles(directory=config.THUMBS_DIR), name="thumbs")
+app.mount("/audio", StaticFiles(directory=config.AUDIO_DIR), name="audio")
 
 
 class GenerateRequest(BaseModel):
@@ -48,8 +49,15 @@ class GenerateRequest(BaseModel):
     subtitle_max_words: int = 6
     llm_engine: str = "groq"
     voice_engine: str = "piper"
+    voice: str | None = None
     num_parts: int = 3
     auto_upload: bool = True
+
+
+class VoicePreviewRequest(BaseModel):
+    engine: str = "piper"
+    voice: str | None = None
+    language: str = "fr"
 
 
 class PublishRequest(BaseModel):
@@ -143,10 +151,33 @@ def generate(req: GenerateRequest):
         },
         llm_engine=req.llm_engine,
         voice_engine=req.voice_engine,
+        voice=req.voice,
         num_parts=req.num_parts,
         auto_upload=req.auto_upload,
     )
     return {"job_id": job_id}
+
+
+@app.get("/api/voices")
+def get_voices():
+    from agents import voice_agent
+
+    return voice_agent.list_voices()
+
+
+@app.post("/api/voice-preview")
+def voice_preview(req: VoicePreviewRequest):
+    from agents import voice_agent
+
+    sample = (
+        "Hi, this is a preview of the selected voice."
+        if req.language == "en"
+        else "Bonjour, ceci est un aperçu de la voix sélectionnée."
+    )
+    path = voice_agent.generate_voice(
+        sample, language=req.language, engine=req.engine, voice=req.voice, output_name="preview"
+    )
+    return {"url": f"/audio/{os.path.basename(path)}?t={os.path.getmtime(path)}"}
 
 
 @app.post("/api/publish-built")
