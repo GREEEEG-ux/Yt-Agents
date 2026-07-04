@@ -65,6 +65,11 @@ def start_generation(
                     subtitle_style=subtitle_style,
                     llm_engine=llm_engine,
                     voice_engine=voice_engine,
+                    source_url=source_url,
+                    file_path=file_path,
+                    mine=mine,
+                    video_format=video_format,
+                    video_quality=video_quality,
                     on_progress=on_progress,
                 )
             elif mode == "film":

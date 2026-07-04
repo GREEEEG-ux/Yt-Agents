@@ -76,6 +76,12 @@ export function Create() {
   const [previewFirst, setPreviewFirst] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recapFileRef = useRef<HTMLInputElement>(null);
+
+  // Source vidéo optionnelle pour le mode récap.
+  const [recapUrl, setRecapUrl] = useState("");
+  const [recapMine, setRecapMine] = useState(false);
+  const [recapFormat, setRecapFormat] = useState<VideoFormat>("short");
 
   const running = job.status === "running";
 
@@ -91,6 +97,21 @@ export function Create() {
   async function startGeneration() {
     let req: GenerateRequest = { mode, topic, film, num_parts: numParts, ...subtitleFields, ...engineFields };
     let file: File | null = null;
+
+    if (mode === "recap") {
+      file = recapFileRef.current?.files?.[0] ?? null;
+      req = {
+        mode: "recap",
+        film,
+        num_parts: numParts,
+        source_url: recapUrl || null,
+        mine: recapMine,
+        video_format: recapFormat,
+        video_quality: videoQuality,
+        ...subtitleFields,
+        ...engineFields,
+      };
+    }
 
     if (mode === "clip") {
       file = fileInputRef.current?.files?.[0] ?? null;
@@ -202,6 +223,33 @@ export function Create() {
             <p className="text-[11px] text-muted-foreground">
               Résumé condensé et original, découpé en {numParts} Shorts qui se suivent (uploadés en privé). La prévisualisation ne s'applique pas à ce mode.
             </p>
+
+            <div className="space-y-3 border-t pt-4">
+              <FieldLabel>Vidéo source (optionnel)</FieldLabel>
+              <p className="text-[11px] text-muted-foreground">
+                Laisse vide pour des illustrations IA. Ou colle un lien : la vidéo sera découpée
+                en {numParts} parties et la narration montée sur la vraie vidéo.
+              </p>
+              <Input placeholder="https://..." value={recapUrl} onChange={(e) => setRecapUrl(e.target.value)} />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox checked={recapMine} onCheckedChange={(v) => setRecapMine(!!v)} />
+                Je confirme avoir les droits d'utiliser cette vidéo
+              </label>
+              <input ref={recapFileRef} type="file" accept="video/*" className="w-full text-xs text-muted-foreground" />
+              <div className="space-y-1.5">
+                <FieldLabel>Format (si vidéo source)</FieldLabel>
+                <Select value={recapFormat} onValueChange={(v) => setRecapFormat(v as VideoFormat)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">Short — plein cadre 9:16 (recadré)</SelectItem>
+                    <SelectItem value="blur">Short — vidéo centrée, haut/bas flou</SelectItem>
+                    <SelectItem value="video">Vidéo classique (format d'origine)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         )}
 

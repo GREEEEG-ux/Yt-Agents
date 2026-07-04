@@ -189,40 +189,85 @@ def run_from_clip(
     return {"video_id": video_id, "topic": data["topic"], "title": data["title"]}
 
 
+def _audio_duration(path):
+    from moviepy import AudioFileClip
+
+    a = AudioFileClip(path)
+    d = a.duration
+    a.close()
+    return d
+
+
 def run_recap_series(
     film,
     num_parts=3,
     subtitle_style=None,
     llm_engine="groq",
     voice_engine="piper",
+    source_url=None,
+    file_path=None,
+    mine=False,
+    video_format="short",
+    video_quality="best",
     on_progress=print,
 ):
     """Résumé condensé d'un film/série découpé en N Shorts (série de parties).
-    Chaque partie est illustrée par IA (commentaire original, pas d'extrait protégé),
-    montée en 9:16 et uploadée en privé. Renvoie la 1re vidéo + le nombre de parties."""
+
+    Deux visuels possibles :
+    - sans source : chaque partie est illustrée par IA (commentaire original) ;
+    - avec un lien/fichier vidéo : la vidéo est découpée en N segments chronologiques
+      et la narration/les sous-titres de chaque partie sont montés sur la vraie vidéo.
+    Uploadé en privé. Renvoie la 1re vidéo + le nombre de parties."""
     on_progress("Génération du résumé condensé...")
     series = script_agent.generate_recap_series(film, parts=num_parts, engine=llm_engine)
     parts = series["parts"]
     total = len(parts)
 
+    use_source = bool(source_url or file_path)
+    source_path, src_total = None, 0.0
+    if use_source:
+        on_progress("Téléchargement de la vidéo source...")
+        source_path = source_agent.validate_and_fetch(
+            url=source_url, file_path=file_path, mine=mine, quality=video_quality
+        )
+        from moviepy import VideoFileClip
+
+        with VideoFileClip(source_path) as v:
+            src_total = v.duration
+
     results = []
     for i, part_script in enumerate(parts):
         step = i + 1
         title = f"{series['title']} (Part {step}/{total})"
-
-        on_progress(f"{step}/{total} - Partie {step} : illustrations...")
         captions = subtitle_agent.split_into_segments(part_script)
-        image_paths = image_agent.generate_images_for_segments(captions)
 
-        on_progress(f"{step}/{total} - Partie {step} : voix + montage...")
+        on_progress(f"{step}/{total} - Partie {step} : voix...")
         audio_path = voice_agent.generate_voice(part_script, engine=voice_engine)
-        video_path = edit_agent.build_video_from_images(
-            image_paths, captions, audio_path, subtitle_style=subtitle_style
-        )
+
+        if use_source:
+            dur = _audio_duration(audio_path)
+            window = src_total / total
+            seg_start = min(i * window, max(0.0, src_total - dur))
+            on_progress(f"{step}/{total} - Partie {step} : montage sur la vidéo...")
+            clip_i = clip_agent.extract_clip(
+                source_path, mode="manual", start=seg_start, duration=max(dur, 2.0)
+            )
+            video_path = edit_agent.build_video_from_clip(
+                clip_i, audio_path=audio_path, captions=captions,
+                video_format=video_format, subtitle_style=subtitle_style,
+            )
+            as_short = video_format != "video"
+        else:
+            on_progress(f"{step}/{total} - Partie {step} : illustrations + montage...")
+            image_paths = image_agent.generate_images_for_segments(captions)
+            video_path = edit_agent.build_video_from_images(
+                image_paths, captions, audio_path, subtitle_style=subtitle_style
+            )
+            as_short = True
 
         on_progress(f"{step}/{total} - Partie {step} : upload...")
         video_id = upload_agent.upload_video(
-            video_path, title, series["description"], series["tags"], as_short=True
+            video_path, title, series["description"], series["tags"], as_short=as_short
         )
         storage_agent.save_history_entry(series["topic"], title, video_id)
         _save_thumbnail(video_path, video_id)
