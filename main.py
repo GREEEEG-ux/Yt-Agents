@@ -14,7 +14,24 @@ from agents import (
     edit_agent,
     upload_agent,
     storage_agent,
+    movie_agent,
 )
+
+
+def _imdb_context(film, on_progress):
+    """Récupère le synopsis officiel IMDb pour ancrer le résumé (best-effort)."""
+    if not (film and movie_agent.is_available()):
+        return ""
+    try:
+        on_progress("Recherche du synopsis officiel (IMDb)...")
+        info = movie_agent.get_plot(film)
+        if info and info.get("description"):
+            meta = f"Titre : {info['title']} ({info.get('year','')}). "
+            meta += f"Genres : {', '.join(info.get('genres') or [])}. " if info.get("genres") else ""
+            return meta + f"Synopsis : {info['description']}"
+    except Exception:
+        pass
+    return ""
 
 
 def _save_thumbnail(video_path, video_id):
@@ -56,7 +73,8 @@ def run(topic=None, film=None, subtitle_style=None, auto_upload=True,
         llm_engine="groq", voice_engine="piper", voice=None, on_progress=print):
     on_progress("1/6 - Génération du script...")
     if film:
-        data = script_agent.generate_film_analysis_script(film, engine=llm_engine)
+        context = _imdb_context(film, on_progress)
+        data = script_agent.generate_film_analysis_script(film, engine=llm_engine, context=context)
     else:
         data = script_agent.generate_script(topic, engine=llm_engine)
 
@@ -220,8 +238,9 @@ def run_recap_series(
     - avec un lien/fichier vidéo : la vidéo est découpée en N segments chronologiques
       et la narration/les sous-titres de chaque partie sont montés sur la vraie vidéo.
     Uploadé en privé. Renvoie la 1re vidéo + le nombre de parties."""
+    context = _imdb_context(film, on_progress)
     on_progress("Génération du résumé condensé...")
-    series = script_agent.generate_recap_series(film, parts=num_parts, engine=llm_engine)
+    series = script_agent.generate_recap_series(film, parts=num_parts, engine=llm_engine, context=context)
     parts = series["parts"]
     total = len(parts)
 

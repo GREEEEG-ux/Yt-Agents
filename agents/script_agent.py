@@ -138,8 +138,19 @@ def generate_script(topic=None, engine="groq"):
     return _finalize_seo(_call_llm(prompt, engine=engine))
 
 
-def generate_film_analysis_script(film, engine="groq"):
-    return _finalize_seo(_call_llm(FILM_ANALYSIS_PROMPT.format(film=film), engine=engine))
+def _with_context(prompt, context):
+    if not context:
+        return prompt
+    return (
+        "Contexte factuel officiel (source IMDb), à respecter pour rester fidèle "
+        "(ne cite jamais mot pour mot, reformule) :\n"
+        f"{context}\n\n" + prompt
+    )
+
+
+def generate_film_analysis_script(film, engine="groq", context=""):
+    prompt = _with_context(FILM_ANALYSIS_PROMPT.format(film=film), context)
+    return _finalize_seo(_call_llm(prompt, engine=engine))
 
 
 def generate_metadata_for_script(script, engine="groq"):
@@ -170,14 +181,16 @@ Réponds STRICTEMENT en JSON avec ces clés :
 Ne donne aucun texte hors du JSON."""
 
 
-def generate_recap_series(film, parts=3, engine="groq"):
+def generate_recap_series(film, parts=3, engine="groq", context=""):
     """Génère un résumé condensé d'un film/série découpé en N parties.
 
     Retourne {topic, title, description, tags, parts:[script1, script2, ...]}.
     Les métadonnées SEO (description/tags/hashtags) sont partagées par toutes les parties.
+    `context` : synopsis officiel (IMDb) pour ancrer le résumé sur des faits réels.
     """
     parts = max(2, min(int(parts), 6))
-    raw = _call_llm(RECAP_PROMPT.format(film=film, parts=parts), engine=engine)
+    prompt = _with_context(RECAP_PROMPT.format(film=film, parts=parts), context)
+    raw = _call_llm(prompt, engine=engine)
     seo = _finalize_seo(raw)
     scripts = [str(s).strip() for s in (raw.get("parts") or []) if str(s).strip()]
     if not scripts:

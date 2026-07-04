@@ -7,6 +7,7 @@ import config
 
 # Voix ElevenLabs "premade" publiques (id → label). Pas besoin de lister via l'API.
 ELEVENLABS_VOICES = [
+    {"id": "n1PvBOwxb8X6m7tahp2h", "label": "Michael (h)"},
     {"id": "21m00Tcm4TlvDq8ikWAM", "label": "Rachel (f)"},
     {"id": "EXAVITQu4vr4xnSDxMaL", "label": "Bella (f)"},
     {"id": "MF3mGyEYCl7XYWbV9V6O", "label": "Elli (f)"},

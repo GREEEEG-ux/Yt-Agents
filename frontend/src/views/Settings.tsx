@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const GROUPS: { label: string; keys: (keyof ConfigStatus)[] }[] = [
   { label: "Modèles IA (script)", keys: ["groq", "mistral", "openai"] },
   { label: "Transcription", keys: ["assemblyai", "deepgram"] },
-  { label: "Sources visuelles", keys: ["pexels", "pixabay"] },
+  { label: "Sources visuelles & données", keys: ["pexels", "pixabay", "imdb"] },
   { label: "Voix & montage", keys: ["piper_exe", "piper_voice", "elevenlabs", "ffmpeg"] },
   { label: "Publication YouTube", keys: ["client_secret", "token"] },
 ];
@@ -18,6 +18,7 @@ const LABELS: Record<keyof ConfigStatus, string> = {
   openai: "ChatGPT — GPT-4o mini",
   pexels: "Pexels — vidéos libres",
   pixabay: "Pixabay — vidéos libres",
+  imdb: "IMDb — synopsis & titres de films",
   assemblyai: "AssemblyAI — transcription",
   deepgram: "Deepgram — transcription",
   piper_exe: "Piper TTS installé",

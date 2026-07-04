@@ -114,6 +114,7 @@ def get_config_status():
         "mistral": bool(config.MISTRAL_API_KEY),
         "openai": bool(config.OPENAI_API_KEY),
         "elevenlabs": bool(config.ELEVENLABS_API_KEY),
+        "imdb": bool(config.IMDB_API_KEY),
         "piper_exe": os.path.exists(config.PIPER_EXE),
         "piper_voice": os.path.exists(config.PIPER_VOICE_MODEL),
         "ffmpeg": shutil.which("ffmpeg") is not None,
@@ -163,6 +164,18 @@ def get_voices():
     from agents import voice_agent
 
     return voice_agent.list_voices()
+
+
+@app.get("/api/movie-suggest")
+def movie_suggest(q: str = ""):
+    from agents import movie_agent
+
+    if not q.strip() or not movie_agent.is_available():
+        return {"suggestions": []}
+    try:
+        return {"suggestions": movie_agent.suggest(q)}
+    except Exception as e:
+        return {"suggestions": [], "error": str(e)}
 
 
 @app.post("/api/voice-preview")

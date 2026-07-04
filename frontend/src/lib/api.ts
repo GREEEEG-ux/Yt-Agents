@@ -26,6 +26,7 @@ export type ConfigStatus = {
   mistral: boolean;
   openai: boolean;
   elevenlabs: boolean;
+  imdb: boolean;
   piper_exe: boolean;
   piper_voice: boolean;
   ffmpeg: boolean;
@@ -74,6 +75,14 @@ export type GenerateRequest = {
 
 export type VoiceInfo = { id: string; label: string; language?: string };
 export type VoicesResponse = { piper: VoiceInfo[]; elevenlabs: VoiceInfo[] };
+
+export type MovieSuggestion = {
+  id: string;
+  title: string;
+  year?: number;
+  image?: string | null;
+  description?: string;
+};
 
 export type SeoResult = {
   topic: string;
@@ -213,6 +222,9 @@ export const api = {
     }).then((r) => json(r)),
 
   getVoices: (): Promise<VoicesResponse> => fetch("/api/voices").then((r) => json<VoicesResponse>(r)),
+
+  movieSuggest: (q: string): Promise<{ suggestions: MovieSuggestion[] }> =>
+    fetch(`/api/movie-suggest?q=${encodeURIComponent(q)}`).then((r) => json(r)),
 
   previewVoice: (req: { engine: string; voice: string | null; language: string }): Promise<{ url: string }> =>
     fetch("/api/voice-preview", {

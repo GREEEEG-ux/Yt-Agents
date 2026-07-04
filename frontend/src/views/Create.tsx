@@ -17,6 +17,7 @@ import { useJob } from "@/lib/JobContext";
 import { PageHeader } from "@/components/PageHeader";
 import { SubtitlePreview } from "@/components/SubtitlePreview";
 import { VoicePicker } from "@/components/VoicePicker";
+import { MovieTitleInput } from "@/components/MovieTitleInput";
 import {
   type GenerateMode,
   type GenerateRequest,
@@ -203,10 +204,10 @@ export function Create() {
         {mode === "film" && (
           <div className="space-y-1.5">
             <FieldLabel>Film / série — angle</FieldLabel>
-            <Input
+            <MovieTitleInput
               placeholder="Inception - théorie sur la toupie finale"
               value={film}
-              onChange={(e) => setFilm(e.target.value)}
+              onChange={setFilm}
             />
           </div>
         )}
@@ -215,11 +216,7 @@ export function Create() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <FieldLabel>Film / série à résumer</FieldLabel>
-              <Input
-                placeholder="Breaking Bad"
-                value={film}
-                onChange={(e) => setFilm(e.target.value)}
-              />
+              <MovieTitleInput placeholder="Breaking Bad" value={film} onChange={setFilm} />
             </div>
             <div className="space-y-1.5">
               <FieldLabel>Nombre de parties</FieldLabel>
