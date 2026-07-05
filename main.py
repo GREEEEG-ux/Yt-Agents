@@ -223,6 +223,72 @@ def _audio_duration(path):
     return d
 
 
+def _run_recap_transcribed(
+    film, num_parts, subtitle_style, llm_engine,
+    source_url, file_path, mine, video_format, video_quality,
+    transcription_enabled, transcription_engine, language, clip_duration, on_progress,
+):
+    """Récap sans voix off : N extraits courts répartis sur la vidéo source,
+    audio d'origine conservé, sous-titres générés par transcription."""
+    from moviepy import VideoFileClip
+
+    if not (source_url or file_path):
+        raise ValueError("Sans voix off, une vidéo source (lien ou fichier) est requise.")
+
+    on_progress("Téléchargement de la vidéo source...")
+    source_path = source_agent.validate_and_fetch(
+        url=source_url, file_path=file_path, mine=mine, quality=video_quality
+    )
+    with VideoFileClip(source_path) as v:
+        src_total = v.duration
+
+    total = max(2, min(int(num_parts), 6))
+    part_len = min(float(clip_duration), src_total)
+    step = (src_total - part_len) / (total - 1) if total > 1 else 0.0
+    base_title = film or "Clip"
+
+    results = []
+    for i in range(total):
+        n = i + 1
+        seg_start = i * step
+        on_progress(f"{n}/{total} - Partie {n} : découpe de l'extrait...")
+        clip_i = clip_agent.extract_clip(source_path, mode="manual", start=seg_start, duration=part_len)
+
+        timed_segments = None
+        transcript = ""
+        if transcription_enabled:
+            on_progress(f"{n}/{total} - Partie {n} : transcription ({transcription_engine})...")
+            timed_segments = transcription_agent.transcribe(
+                clip_i, language=language, engine=transcription_engine
+            )
+            transcript = " ".join(s["text"] for s in timed_segments)
+
+        data = script_agent.generate_metadata_for_script(transcript or base_title, engine=llm_engine)
+        title = f"{base_title} (Part {n}/{total})"
+
+        on_progress(f"{n}/{total} - Partie {n} : montage...")
+        video_path = edit_agent.build_video_from_clip(
+            clip_i, audio_path=None, timed_segments=timed_segments,
+            video_format=video_format, subtitle_style=subtitle_style,
+        )
+
+        on_progress(f"{n}/{total} - Partie {n} : upload...")
+        video_id = upload_agent.upload_video(
+            video_path, title, data["description"], data["tags"], as_short=(video_format != "video")
+        )
+        storage_agent.save_history_entry(f"{base_title} recap", title, video_id)
+        _save_thumbnail(video_path, video_id)
+        results.append({"video_id": video_id, "title": title})
+
+    on_progress(f"Terminé. {total} parties uploadées en privé.")
+    first = results[0]
+    return {
+        "video_id": first["video_id"],
+        "title": f"{base_title} — {total} parties",
+        "topic": f"{base_title} recap",
+    }
+
+
 def run_recap_series(
     film,
     num_parts=3,
@@ -235,15 +301,28 @@ def run_recap_series(
     mine=False,
     video_format="short",
     video_quality="best",
+    voice_enabled=True,
+    transcription_enabled=True,
+    transcription_engine="whisper",
+    language="fr",
+    clip_duration=40.0,
     on_progress=print,
 ):
     """Résumé condensé d'un film/série découpé en N Shorts (série de parties).
 
-    Deux visuels possibles :
     - sans source : chaque partie est illustrée par IA (commentaire original) ;
-    - avec un lien/fichier vidéo : la vidéo est découpée en N segments chronologiques
-      et la narration/les sous-titres de chaque partie sont montés sur la vraie vidéo.
+    - avec un lien/fichier vidéo + voix off : la vidéo est découpée en N segments
+      et la narration/les sous-titres sont montés sur la vraie vidéo ;
+    - avec un lien/fichier vidéo SANS voix off : on prend N extraits courts répartis
+      sur la vidéo, on garde l'audio d'origine et on transcrit pour les sous-titres.
     Uploadé en privé. Renvoie la 1re vidéo + le nombre de parties."""
+    if not voice_enabled:
+        return _run_recap_transcribed(
+            film, num_parts, subtitle_style, llm_engine,
+            source_url, file_path, mine, video_format, video_quality,
+            transcription_enabled, transcription_engine, language, clip_duration, on_progress,
+        )
+
     context = _imdb_context(film, on_progress)
     on_progress("Génération du résumé condensé...")
     series = script_agent.generate_recap_series(film, parts=num_parts, engine=llm_engine, context=context)

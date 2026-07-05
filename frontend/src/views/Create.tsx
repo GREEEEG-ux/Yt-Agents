@@ -48,6 +48,7 @@ export function Create() {
   const [topic, setTopic] = useState("");
   const [film, setFilm] = useState("");
   const [numParts, setNumParts] = useState(3);
+  const [recapVoiceEnabled, setRecapVoiceEnabled] = useState(true);
 
   const [clipUrl, setClipUrl] = useState("");
   const [clipMine, setClipMine] = useState(false);
@@ -112,6 +113,9 @@ export function Create() {
         mine: recapMine,
         video_format: recapFormat,
         video_quality: videoQuality,
+        voice_enabled: recapVoiceEnabled,
+        transcription_enabled: !recapVoiceEnabled,
+        transcription_engine: engine,
         ...subtitleFields,
         ...engineFields,
       };
@@ -180,7 +184,7 @@ export function Create() {
           </Select>
         </div>
 
-        {mode !== "clip" && (
+        {mode !== "clip" && !(mode === "recap" && !recapVoiceEnabled) && (
           <div className="space-y-2 border-t pt-4">
             <FieldLabel>Voix off</FieldLabel>
             <VoicePicker
@@ -234,14 +238,43 @@ export function Create() {
               </Select>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Résumé condensé et original, découpé en {numParts} Shorts qui se suivent (uploadés en privé). La prévisualisation ne s'applique pas à ce mode.
+              Résumé condensé découpé en {numParts} Shorts (uploadés en privé). La prévisualisation ne s'applique pas à ce mode.
             </p>
 
+            <div className="flex items-center justify-between border-t pt-4">
+              <div>
+                <FieldLabel>Voix off IA</FieldLabel>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {recapVoiceEnabled
+                    ? "Narration IA du résumé."
+                    : "Sans narration : audio d'origine conservé, sous-titres par transcription. Vidéo source requise."}
+                </p>
+              </div>
+              <Switch checked={recapVoiceEnabled} onCheckedChange={setRecapVoiceEnabled} />
+            </div>
+
+            {!recapVoiceEnabled && (
+              <div className="space-y-1.5 pl-3 border-l border-border">
+                <FieldLabel>Moteur de transcription</FieldLabel>
+                <Select value={engine} onValueChange={(v) => setEngine(v as TranscriptionEngine)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whisper">Whisper (local, gratuit)</SelectItem>
+                    <SelectItem value="assemblyai">AssemblyAI (cloud)</SelectItem>
+                    <SelectItem value="deepgram">Deepgram (cloud)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-3 border-t pt-4">
-              <FieldLabel>Vidéo source (optionnel)</FieldLabel>
+              <FieldLabel>{recapVoiceEnabled ? "Vidéo source (optionnel)" : "Vidéo source (requise)"}</FieldLabel>
               <p className="text-[11px] text-muted-foreground">
-                Laisse vide pour des illustrations IA. Ou colle un lien : la vidéo sera découpée
-                en {numParts} parties et la narration montée sur la vraie vidéo.
+                {recapVoiceEnabled
+                  ? "Laisse vide pour des illustrations IA. Ou colle un lien : la vidéo est découpée et la narration montée dessus."
+                  : "Colle le lien de la vidéo à résumer : N extraits courts en seront tirés, avec leur audio d'origine et des sous-titres transcrits."}
               </p>
               <Input placeholder="https://..." value={recapUrl} onChange={(e) => setRecapUrl(e.target.value)} />
               <label className="flex items-center gap-2 text-xs text-muted-foreground">

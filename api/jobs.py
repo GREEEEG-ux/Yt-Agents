@@ -71,6 +71,11 @@ def start_generation(
                     mine=mine,
                     video_format=video_format,
                     video_quality=video_quality,
+                    voice_enabled=voice_enabled,
+                    transcription_enabled=transcription_enabled,
+                    transcription_engine=transcription_engine,
+                    language=language,
+                    clip_duration=clip_duration,
                     on_progress=on_progress,
                 )
             elif mode == "film":

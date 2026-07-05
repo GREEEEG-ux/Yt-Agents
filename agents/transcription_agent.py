@@ -53,9 +53,13 @@ def _get_whisper():
 
 def _transcribe_whisper(media_path, language):
     model = _get_whisper()
-    segments, _info = model.transcribe(
-        media_path, language=language, vad_filter=True, word_timestamps=True
-    )
+    try:
+        segments, _info = model.transcribe(
+            media_path, language=language, vad_filter=True, word_timestamps=True
+        )
+        segments = list(segments)  # force l'itération pour capter une erreur "pas d'audio"
+    except (IndexError, ValueError):
+        return []  # média sans piste audio → pas de sous-titres
     result = []
     for seg in segments:
         if not seg.text.strip():
