@@ -19,16 +19,22 @@ from agents import (
 
 
 def _imdb_context(film, on_progress):
-    """Récupère le synopsis officiel IMDb pour ancrer le résumé (best-effort)."""
+    """Identifie l'œuvre via IMDb pour ancrer/désambiguïser le résumé (best-effort)."""
     if not (film and movie_agent.is_available()):
         return ""
     try:
-        on_progress("Recherche du synopsis officiel (IMDb)...")
+        on_progress("Identification de l'œuvre (IMDb)...")
         info = movie_agent.get_plot(film)
-        if info and info.get("description"):
-            meta = f"Titre : {info['title']} ({info.get('year','')}). "
-            meta += f"Genres : {', '.join(info.get('genres') or [])}. " if info.get("genres") else ""
-            return meta + f"Synopsis : {info['description']}"
+        if info and info.get("title"):
+            parts = [f"Œuvre identifiée sur IMDb : {info['title']}"]
+            if info.get("year"):
+                parts.append(f"({info['year']})")
+            if info.get("descriptor"):
+                parts.append(f"— {info['descriptor']}")
+            return (
+                " ".join(parts)
+                + ". Base ton résumé sur CETTE œuvre précise (pas une homonyme)."
+            )
     except Exception:
         pass
     return ""
