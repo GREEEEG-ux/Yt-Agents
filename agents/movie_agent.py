@@ -12,7 +12,9 @@ lèvent une erreur claire — le pipeline retombe alors sur le LLM seul.
 import requests
 import config
 
-BASE = "https://prod.api.market/api/v1/sleeyax/imdb"
+
+def _base():
+    return config.IMDB_BASE_URL.rstrip("/")
 
 
 def is_available():
@@ -28,7 +30,7 @@ def _headers():
 def suggest(query, limit=6):
     """Suggestions de titres pour l'autocomplétion : [{id, title, year, image, description}]."""
     resp = requests.get(
-        f"{BASE}/api/imdb/search/suggestions",
+        f"{_base()}/api/imdb/search/suggestions",
         headers=_headers(),
         params={"query": query},
         timeout=30,
@@ -52,7 +54,7 @@ def suggest(query, limit=6):
 def get_plot(query):
     """Meilleur résultat pour `query` → synopsis officiel + méta, ou None."""
     resp = requests.get(
-        f"{BASE}/api/imdb/search/advanced",
+        f"{_base()}/api/imdb/search/advanced",
         headers=_headers(),
         params={"query": query, "limit": 1, "sortBy": "POPULARITY", "sortOrder": "ASC"},
         timeout=30,
