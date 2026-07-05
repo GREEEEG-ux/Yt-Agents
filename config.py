@@ -12,8 +12,8 @@ MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 IMDB_API_KEY = os.getenv("IMDB_API_KEY")
-# Provider api.market : "sleeyax" (GET synchrone, défaut) — base URL surchargeable.
-IMDB_BASE_URL = os.getenv("IMDB_BASE_URL", "https://prod.api.market/api/v1/sleeyax/imdb")
+# Provider api.market IMDb (magicapi, asynchrone) — base URL surchargeable.
+IMDB_BASE_URL = os.getenv("IMDB_BASE_URL", "https://prod.api.market/api/v1/magicapi/imdb")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")
 YOUTUBE_CLIENT_SECRETS_FILE = os.getenv("YOUTUBE_CLIENT_SECRETS_FILE", "client_secret.json")
 
