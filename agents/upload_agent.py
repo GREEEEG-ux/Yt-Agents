@@ -28,8 +28,9 @@ def get_credentials():
         if creds and creds.expired and creds.refresh_token and has_required_scopes:
             creds.refresh(Request())
         else:
+            secrets_path = os.path.join(config.BASE_DIR, config.YOUTUBE_CLIENT_SECRETS_FILE)
             flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-                config.YOUTUBE_CLIENT_SECRETS_FILE, SCOPES
+                secrets_path, SCOPES
             )
             creds = flow.run_local_server(port=0)
         with open(TOKEN_FILE, "w") as f:
@@ -140,6 +141,63 @@ def set_metadata(video_id, title=None, description=None, tags=None):
         snippet["tags"] = tags
     youtube.videos().update(part="snippet", body={"id": video_id, "snippet": snippet}).execute()
     return {"ok": True, "video_id": video_id}
+
+
+def list_channel_videos(max_results=24, page_token=None):
+    """Liste les vidéos de la chaîne connectée (via la playlist 'uploads'),
+    peu importe qu'elles aient été créées par ce projet ou non. Renvoie
+    {items: [...], next_page_token}."""
+    youtube = get_authenticated_service()
+
+    channel = youtube.channels().list(part="contentDetails", mine=True).execute()
+    items = channel.get("items", [])
+    if not items:
+        return {"items": [], "next_page_token": None}
+    uploads_playlist_id = items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
+
+    playlist = (
+        youtube.playlistItems()
+        .list(
+            part="snippet,contentDetails",
+            playlistId=uploads_playlist_id,
+            maxResults=max_results,
+            pageToken=page_token,
+        )
+        .execute()
+    )
+    video_ids = [pi["contentDetails"]["videoId"] for pi in playlist.get("items", [])]
+    if not video_ids:
+        return {"items": [], "next_page_token": None}
+
+    details = (
+        youtube.videos()
+        .list(part="snippet,statistics,status", id=",".join(video_ids))
+        .execute()
+    )
+    by_id = {d["id"]: d for d in details.get("items", [])}
+
+    out = []
+    for pi in playlist.get("items", []):
+        vid = pi["contentDetails"]["videoId"]
+        d = by_id.get(vid)
+        if not d:
+            continue
+        snippet = d.get("snippet", {})
+        thumbs = snippet.get("thumbnails", {})
+        thumb = (thumbs.get("medium") or thumbs.get("default") or {}).get("url", "")
+        out.append(
+            {
+                "video_id": vid,
+                "title": snippet.get("title", ""),
+                "thumbnail": thumb,
+                "published_at": snippet.get("publishedAt", ""),
+                "privacy_status": d.get("status", {}).get("privacyStatus", "private"),
+                "view_count": int(d.get("statistics", {}).get("viewCount", 0)),
+                "like_count": int(d.get("statistics", {}).get("likeCount", 0)),
+            }
+        )
+
+    return {"items": out, "next_page_token": playlist.get("nextPageToken")}
 
 
 def get_video_stats(video_ids):

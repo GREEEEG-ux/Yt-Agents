@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,13 @@ const MODE_OPTIONS: { id: GenerateMode; title: string; subtitle: string; icon: t
 
 type Step = "mode" | "options" | "review";
 
-export function Create() {
+export function Create({
+  initialSourceUrl,
+  onConsumeInitialSourceUrl,
+}: {
+  initialSourceUrl?: string | null;
+  onConsumeInitialSourceUrl?: () => void;
+} = {}) {
   const job = useJob();
 
   const [step, setStep] = useState<Step>("mode");
@@ -64,6 +70,18 @@ export function Create() {
 
   const [clipUrl, setClipUrl] = useState("");
   const [clipMine, setClipMine] = useState(false);
+
+  // Vidéo choisie depuis "Chaîne YouTube" -> préremplit l'auto-clip (c'est ta propre chaîne).
+  useEffect(() => {
+    if (!initialSourceUrl) return;
+    setMode("clip");
+    setClipUrl(initialSourceUrl);
+    setClipMine(true);
+    setStep("options");
+    onConsumeInitialSourceUrl?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSourceUrl]);
+
   const [clipMode, setClipMode] = useState<ClipMode>("manual");
   const [clipStart, setClipStart] = useState(0);
   const [clipDuration, setClipDuration] = useState(30);

@@ -17,6 +17,22 @@ export type StatsResponse = {
   videos: VideoStats[];
 };
 
+export type ChannelVideo = {
+  video_id: string;
+  title: string;
+  thumbnail: string;
+  published_at: string;
+  privacy_status: string;
+  view_count: number;
+  like_count: number;
+};
+
+export type ChannelVideosResponse = {
+  items: ChannelVideo[];
+  next_page_token: string | null;
+  error?: string;
+};
+
 export type ConfigStatus = {
   groq: boolean;
   pexels: boolean;
@@ -222,6 +238,11 @@ export const api = {
     }).then((r) => json(r)),
 
   getVoices: (): Promise<VoicesResponse> => fetch("/api/voices").then((r) => json<VoicesResponse>(r)),
+
+  getChannelVideos: (pageToken?: string | null): Promise<ChannelVideosResponse> =>
+    fetch(`/api/youtube/channel-videos${pageToken ? `?page_token=${encodeURIComponent(pageToken)}` : ""}`).then(
+      (r) => json<ChannelVideosResponse>(r)
+    ),
 
   movieSuggest: (q: string): Promise<{ suggestions: MovieSuggestion[] }> =>
     fetch(`/api/movie-suggest?q=${encodeURIComponent(q)}`).then((r) => json(r)),

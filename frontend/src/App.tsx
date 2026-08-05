@@ -12,9 +12,10 @@ import { OptimizerView } from "@/views/OptimizerView";
 import { Library } from "@/views/Library";
 import { Performances } from "@/views/Performances";
 import { Settings } from "@/views/Settings";
-import { LayoutGrid, Wand2, Hash, LineChart, Film, TrendingUp, Settings2 } from "lucide-react";
+import { YouTubeChannel } from "@/views/YouTubeChannel";
+import { LayoutGrid, Wand2, Hash, LineChart, Film, TrendingUp, Settings2, Tv } from "lucide-react";
 
-type View = "home" | "create" | "seo" | "optimizer" | "library" | "performances" | "settings";
+type View = "home" | "create" | "seo" | "optimizer" | "library" | "channel" | "performances" | "settings";
 
 const NAV: { id: View; label: string; icon: typeof LayoutGrid; group: string }[] = [
   { id: "home", label: "Accueil", icon: LayoutGrid, group: "Studio" },
@@ -22,6 +23,7 @@ const NAV: { id: View; label: string; icon: typeof LayoutGrid; group: string }[]
   { id: "seo", label: "SEO", icon: Hash, group: "Studio" },
   { id: "optimizer", label: "Optimizer", icon: LineChart, group: "Studio" },
   { id: "library", label: "Bibliothèque", icon: Film, group: "Contenu" },
+  { id: "channel", label: "Chaîne YouTube", icon: Tv, group: "Contenu" },
   { id: "performances", label: "Performances", icon: TrendingUp, group: "Contenu" },
   { id: "settings", label: "Réglages", icon: Settings2, group: "Système" },
 ];
@@ -85,8 +87,14 @@ function Sidebar({ view, setView }: { view: View; setView: (v: View) => void }) 
 
 function AppShell() {
   const [view, setView] = useState<View>("home");
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const { status, percent } = useJob();
   const current = NAV.find((n) => n.id === view);
+
+  function resumeVideo(url: string) {
+    setResumeUrl(url);
+    setView("create");
+  }
 
   return (
     <div className="min-h-screen flex text-[13px]">
@@ -110,10 +118,13 @@ function AppShell() {
 
         <main className="flex-1 px-8 py-8 max-w-6xl w-full">
           {view === "home" && <Home onCreate={() => setView("create")} />}
-          {view === "create" && <Create />}
+          {view === "create" && (
+            <Create initialSourceUrl={resumeUrl} onConsumeInitialSourceUrl={() => setResumeUrl(null)} />
+          )}
           {view === "seo" && <SeoTool />}
           {view === "optimizer" && <OptimizerView />}
           {view === "library" && <Library />}
+          {view === "channel" && <YouTubeChannel onResume={resumeVideo} />}
           {view === "performances" && <Performances />}
           {view === "settings" && <Settings />}
         </main>

@@ -159,6 +159,14 @@ def generate(req: GenerateRequest):
     return {"job_id": job_id}
 
 
+@app.get("/api/youtube/channel-videos")
+def youtube_channel_videos(page_token: str | None = None, max_results: int = 24):
+    try:
+        return upload_agent.list_channel_videos(max_results=max_results, page_token=page_token)
+    except Exception as e:
+        return {"items": [], "next_page_token": None, "error": str(e)}
+
+
 @app.get("/api/voices")
 def get_voices():
     from agents import voice_agent
