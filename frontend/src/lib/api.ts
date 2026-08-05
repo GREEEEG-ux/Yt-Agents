@@ -52,6 +52,16 @@ export type DiscoverVideosResponse = {
 export type SearchDuration = "any" | "short" | "medium" | "long";
 export type SearchOrder = "relevance" | "viewCount" | "date" | "rating";
 
+export type VideoInfo = {
+  video_id: string;
+  title: string;
+  description: string;
+  hashtags: string[];
+  tags: string[];
+  duration_seconds: number | null;
+  error?: string;
+};
+
 export type ConfigStatus = {
   groq: boolean;
   pexels: boolean;
@@ -73,7 +83,7 @@ export type GenerateMode = "free" | "topic" | "film" | "recap" | "clip";
 
 export type ClipMode = "manual" | "speech" | "first";
 export type VideoFormat = "short" | "blur" | "video";
-export type Language = "fr" | "en";
+export type Language = "fr" | "en" | "es";
 export type TranscriptionEngine = "whisper" | "assemblyai" | "deepgram";
 export type VideoQuality = "best" | "1080" | "720" | "480" | "360";
 export type SubtitleMode = "sentence" | "word";
@@ -262,6 +272,9 @@ export const api = {
     fetch(`/api/youtube/channel-videos${pageToken ? `?page_token=${encodeURIComponent(pageToken)}` : ""}`).then(
       (r) => json<ChannelVideosResponse>(r)
     ),
+
+  getVideoInfo: (videoId: string): Promise<VideoInfo> =>
+    fetch(`/api/youtube/video-info?video_id=${encodeURIComponent(videoId)}`).then((r) => json<VideoInfo>(r)),
 
   getTrending: (region: string, pageToken?: string | null): Promise<DiscoverVideosResponse> =>
     fetch(

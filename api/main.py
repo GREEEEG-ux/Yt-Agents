@@ -167,6 +167,17 @@ def youtube_channel_videos(page_token: str | None = None, max_results: int = 24)
         return {"items": [], "next_page_token": None, "error": str(e)}
 
 
+@app.get("/api/youtube/video-info")
+def youtube_video_info(video_id: str):
+    from agents import youtube_discover_agent
+
+    try:
+        info = youtube_discover_agent.get_video_info(video_id)
+        return info or {"error": "Vidéo introuvable."}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.get("/api/youtube/trending")
 def youtube_trending(region: str = "FR", max_results: int = 24, page_token: str | None = None):
     from agents import youtube_discover_agent

@@ -18,6 +18,7 @@ import { SubtitlePreview } from "@/components/SubtitlePreview";
 import { VoicePicker } from "@/components/VoicePicker";
 import { MovieTitleInput } from "@/components/MovieTitleInput";
 import { StepShell, OptionGrid, OptionCard } from "@/components/StepShell";
+import { SourceInsight } from "@/components/SourceInsight";
 import { Sparkles, PenLine, Clapperboard, Library, Link2 } from "lucide-react";
 import {
   type GenerateMode,
@@ -360,18 +361,33 @@ export function Create({
             </div>
 
             {!recapVoiceEnabled && (
-              <div className="space-y-1.5 pl-3 border-l border-border">
-                <FieldLabel>Moteur de transcription</FieldLabel>
-                <Select value={engine} onValueChange={(v) => setEngine(v as TranscriptionEngine)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="whisper">Whisper (local, gratuit)</SelectItem>
-                    <SelectItem value="assemblyai">AssemblyAI (cloud)</SelectItem>
-                    <SelectItem value="deepgram">Deepgram (cloud)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3 pl-3 border-l border-border">
+                <div className="space-y-1.5">
+                  <FieldLabel>Moteur de transcription</FieldLabel>
+                  <Select value={engine} onValueChange={(v) => setEngine(v as TranscriptionEngine)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="whisper">Whisper (local, gratuit)</SelectItem>
+                      <SelectItem value="assemblyai">AssemblyAI (cloud)</SelectItem>
+                      <SelectItem value="deepgram">Deepgram (cloud)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <FieldLabel>Langue de transcription</FieldLabel>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="en">Anglais</SelectItem>
+                      <SelectItem value="es">Espagnol</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 
@@ -454,18 +470,28 @@ export function Create({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {clipMode === "manual" && (
+            {clipMode === "manual" && clipUrl ? (
+              <SourceInsight
+                url={clipUrl}
+                start={clipStart}
+                duration={clipDuration}
+                onChangeStart={setClipStart}
+                onChangeDuration={setClipDuration}
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {clipMode === "manual" && (
+                  <div className="space-y-1">
+                    <FieldLabel>Début (sec)</FieldLabel>
+                    <Input type="number" min={0} value={clipStart} onChange={(e) => setClipStart(Number(e.target.value))} />
+                  </div>
+                )}
                 <div className="space-y-1">
-                  <FieldLabel>Début (sec)</FieldLabel>
-                  <Input type="number" min={0} value={clipStart} onChange={(e) => setClipStart(Number(e.target.value))} />
+                  <FieldLabel>Durée (sec)</FieldLabel>
+                  <Input type="number" min={5} max={180} value={clipDuration} onChange={(e) => setClipDuration(Number(e.target.value))} />
                 </div>
-              )}
-              <div className="space-y-1">
-                <FieldLabel>Durée (sec)</FieldLabel>
-                <Input type="number" min={5} max={180} value={clipDuration} onChange={(e) => setClipDuration(Number(e.target.value))} />
               </div>
-            </div>
+            )}
 
             <div className="space-y-1.5">
               <FieldLabel>Format de publication</FieldLabel>
@@ -524,18 +550,33 @@ export function Create({
                   <Switch checked={transcriptionEnabled} onCheckedChange={setTranscriptionEnabled} />
                 </div>
                 {transcriptionEnabled && (
-                  <div className="space-y-1.5">
-                    <FieldLabel>Moteur de transcription</FieldLabel>
-                    <Select value={engine} onValueChange={(v) => setEngine(v as TranscriptionEngine)}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="whisper">Whisper (local, gratuit)</SelectItem>
-                        <SelectItem value="assemblyai">AssemblyAI (cloud)</SelectItem>
-                        <SelectItem value="deepgram">Deepgram (cloud)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <FieldLabel>Moteur de transcription</FieldLabel>
+                      <Select value={engine} onValueChange={(v) => setEngine(v as TranscriptionEngine)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="whisper">Whisper (local, gratuit)</SelectItem>
+                          <SelectItem value="assemblyai">AssemblyAI (cloud)</SelectItem>
+                          <SelectItem value="deepgram">Deepgram (cloud)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Langue de transcription</FieldLabel>
+                      <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fr">Français</SelectItem>
+                          <SelectItem value="en">Anglais</SelectItem>
+                          <SelectItem value="es">Espagnol</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 )}
               </div>
