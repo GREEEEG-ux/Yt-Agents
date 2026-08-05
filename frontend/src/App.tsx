@@ -23,7 +23,7 @@ const NAV: { id: View; label: string; icon: typeof LayoutGrid; group: string }[]
   { id: "seo", label: "SEO", icon: Hash, group: "Studio" },
   { id: "optimizer", label: "Optimizer", icon: LineChart, group: "Studio" },
   { id: "library", label: "Bibliothèque", icon: Film, group: "Contenu" },
-  { id: "channel", label: "Chaîne YouTube", icon: Tv, group: "Contenu" },
+  { id: "channel", label: "YouTube", icon: Tv, group: "Contenu" },
   { id: "performances", label: "Performances", icon: TrendingUp, group: "Contenu" },
   { id: "settings", label: "Réglages", icon: Settings2, group: "Système" },
 ];

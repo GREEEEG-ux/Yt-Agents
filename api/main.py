@@ -167,6 +167,34 @@ def youtube_channel_videos(page_token: str | None = None, max_results: int = 24)
         return {"items": [], "next_page_token": None, "error": str(e)}
 
 
+@app.get("/api/youtube/trending")
+def youtube_trending(region: str = "FR", max_results: int = 24, page_token: str | None = None):
+    from agents import youtube_discover_agent
+
+    try:
+        return youtube_discover_agent.get_trending(region=region, max_results=max_results, page_token=page_token)
+    except Exception as e:
+        return {"items": [], "next_page_token": None, "error": str(e)}
+
+
+@app.get("/api/youtube/search")
+def youtube_search(
+    q: str = "",
+    duration: str = "any",
+    order: str = "relevance",
+    max_results: int = 24,
+    page_token: str | None = None,
+):
+    from agents import youtube_discover_agent
+
+    try:
+        return youtube_discover_agent.search_videos(
+            q, duration=duration, order=order, max_results=max_results, page_token=page_token
+        )
+    except Exception as e:
+        return {"items": [], "next_page_token": None, "error": str(e)}
+
+
 @app.get("/api/voices")
 def get_voices():
     from agents import voice_agent

@@ -33,6 +33,25 @@ export type ChannelVideosResponse = {
   error?: string;
 };
 
+export type DiscoverVideo = {
+  video_id: string;
+  title: string;
+  channel_title: string;
+  thumbnail: string;
+  published_at: string;
+  view_count: number | null;
+  like_count: number | null;
+};
+
+export type DiscoverVideosResponse = {
+  items: DiscoverVideo[];
+  next_page_token: string | null;
+  error?: string;
+};
+
+export type SearchDuration = "any" | "short" | "medium" | "long";
+export type SearchOrder = "relevance" | "viewCount" | "date" | "rating";
+
 export type ConfigStatus = {
   groq: boolean;
   pexels: boolean;
@@ -243,6 +262,21 @@ export const api = {
     fetch(`/api/youtube/channel-videos${pageToken ? `?page_token=${encodeURIComponent(pageToken)}` : ""}`).then(
       (r) => json<ChannelVideosResponse>(r)
     ),
+
+  getTrending: (region: string, pageToken?: string | null): Promise<DiscoverVideosResponse> =>
+    fetch(
+      `/api/youtube/trending?region=${encodeURIComponent(region)}${pageToken ? `&page_token=${encodeURIComponent(pageToken)}` : ""}`
+    ).then((r) => json<DiscoverVideosResponse>(r)),
+
+  searchYoutube: (
+    q: string,
+    duration: SearchDuration,
+    order: SearchOrder,
+    pageToken?: string | null
+  ): Promise<DiscoverVideosResponse> =>
+    fetch(
+      `/api/youtube/search?q=${encodeURIComponent(q)}&duration=${duration}&order=${order}${pageToken ? `&page_token=${encodeURIComponent(pageToken)}` : ""}`
+    ).then((r) => json<DiscoverVideosResponse>(r)),
 
   movieSuggest: (q: string): Promise<{ suggestions: MovieSuggestion[] }> =>
     fetch(`/api/movie-suggest?q=${encodeURIComponent(q)}`).then((r) => json(r)),
