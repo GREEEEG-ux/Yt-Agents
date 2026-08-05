@@ -3,21 +3,49 @@
 @import "tw-animate-css";
 
 /* ---------------------------------------------------------------------------
-   Cinematic dark studio — inspired by Figma's app chrome and Prime Video's
-   immersive, content-forward layout. Deep near-black surfaces, a single vivid
-   accent, rounded media cards, soft depth.
+   Two themes: light (clean wizard-card look, like the reference screenshots)
+   and dark (cinematic studio). Switched via [data-theme] on <html>.
 --------------------------------------------------------------------------- */
 
-:root {
+:root,
+[data-theme="light"] {
   --radius: 0.75rem;
 
-  --background: #0a0a0d;        /* app canvas */
+  --background: #f4f4f6;
+  --foreground: #14151a;
+  --card: #ffffff;
+  --card-foreground: #14151a;
+  --popover: #ffffff;
+  --popover-foreground: #14151a;
+  --primary: #14151a;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #14151a;
+  --muted: #eef0f4;
+  --muted-foreground: #6b6f7a;
+  --accent: #eef0f4;
+  --accent-foreground: #14151a;
+  --destructive: #d3372f;
+  --border: #e4e5ea;
+  --input: #e4e5ea;
+  --ring: #14151a;
+
+  --sidebar: #ffffff;
+  --elevated: #f4f4f6;
+
+  --accent-vivid: #6d5efc;
+}
+
+[data-theme="dark"] {
+  --radius: 0.75rem;
+
+  --background: #0a0a0d;
   --foreground: #f3f3f6;
-  --card: #141419;             /* panels / cards */
+  --card: #141419;
   --card-foreground: #f3f3f6;
   --popover: #17171d;
   --popover-foreground: #f3f3f6;
-  --primary: #6d5efc;          /* vivid indigo accent */
+  --primary: #6d5efc;
   --primary-foreground: #ffffff;
   --secondary: #1c1c22;
   --secondary-foreground: #f3f3f6;
@@ -32,6 +60,8 @@
 
   --sidebar: #101014;
   --elevated: #1b1b22;
+
+  --accent-vivid: #6d5efc;
 }
 
 @theme inline {
@@ -58,6 +88,7 @@
   --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
   --color-elevated: var(--elevated);
+  --color-accent-vivid: var(--accent-vivid);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -74,18 +105,19 @@
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2c2c35;
+    background: var(--border);
     border-radius: 5px;
     border: 2px solid var(--background);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a45;
+    background: var(--muted-foreground);
   }
 }
 
@@ -116,4 +148,28 @@ main > section {
     opacity: 1;
     transform: none;
   }
+}
+
+/* Wizard step transition. */
+.wizard-step {
+  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Large selectable option card (mode picker, format picker...). */
+.option-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+.option-card:hover {
+  border-color: var(--muted-foreground);
+}
+.option-card.selected {
+  border-color: var(--foreground);
+  background: var(--accent);
+}
+.option-card:active {
+  transform: scale(0.99);
 }

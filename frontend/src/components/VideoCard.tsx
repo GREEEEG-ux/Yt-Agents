@@ -53,6 +53,42 @@ export function VideoCard({
   );
 }
 
+export function LibraryCard({
+  videoId,
+  title,
+  subtitle,
+  badge,
+  actions,
+}: {
+  videoId: string;
+  title: string;
+  subtitle: string;
+  badge?: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <a href={`https://youtu.be/${videoId}`} target="_blank" rel="noreferrer" className="group block">
+        <div className="relative aspect-video bg-muted overflow-hidden">
+          <img
+            src={thumbUrl(videoId)}
+            alt={title}
+            loading="lazy"
+            onError={(e) => onThumbError(e, videoId)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          {badge && <div className="absolute top-2 left-2">{badge}</div>}
+        </div>
+      </a>
+      <div className="p-3">
+        <div className="text-[13px] font-medium truncate">{title}</div>
+        <div className="text-[11px] text-muted-foreground truncate mt-0.5 mb-2.5">{subtitle}</div>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
 export function Rail({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mb-8">

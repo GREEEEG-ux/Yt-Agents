@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/PageHeader";
-import { HistoryRow, EmptyState } from "@/components/HistoryRow";
+import { PageHeader, SectionLabel } from "@/components/PageHeader";
+import { EmptyState } from "@/components/HistoryRow";
+import { LibraryCard } from "@/components/VideoCard";
 import { api, type HistoryEntry } from "@/lib/api";
 
 export function Library() {
@@ -29,27 +29,39 @@ export function Library() {
   return (
     <section>
       <PageHeader title="Bibliothèque" intro="Toutes tes vidéos générées, prêtes à publier ou à retirer." />
-      <Card className="py-0 divide-y divide-border shadow-none overflow-hidden">
-        {history.length === 0 && <EmptyState>Aucune vidéo encore.</EmptyState>}
-        {history.map((entry) => (
-          <HistoryRow
-            key={entry.video_id}
-            title={entry.title}
-            subtitle={`${entry.topic} · ${new Date(entry.date).toLocaleString("fr-FR")}`}
-            videoId={entry.video_id}
-            actions={
-              <>
-                <Button size="sm" variant="outline" onClick={() => publish(entry.video_id)}>
-                  Rendre public
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => remove(entry.video_id)}>
-                  Supprimer
-                </Button>
-              </>
-            }
-          />
-        ))}
-      </Card>
+
+      {history.length === 0 ? (
+        <EmptyState>Aucune vidéo encore.</EmptyState>
+      ) : (
+        <>
+          <SectionLabel>{history.length} vidéo{history.length > 1 ? "s" : ""}</SectionLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.map((entry) => (
+              <LibraryCard
+                key={entry.video_id}
+                videoId={entry.video_id}
+                title={entry.title}
+                subtitle={`${entry.topic} · ${new Date(entry.date).toLocaleDateString("fr-FR")}`}
+                badge={
+                  <span className="text-[10px] font-medium bg-black/70 text-white px-2 py-0.5 rounded-md backdrop-blur-sm">
+                    Privé
+                  </span>
+                }
+                actions={
+                  <>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => publish(entry.video_id)}>
+                      Rendre public
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => remove(entry.video_id)}>
+                      Supprimer
+                    </Button>
+                  </>
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { JobProvider, useJob } from "@/lib/JobContext";
+import { ThemeProvider } from "@/lib/ThemeContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProgressDock } from "@/components/ProgressDock";
 import { PreviewModal, PublishingOverlay } from "@/components/PreviewModal";
 import { Home } from "@/views/Home";
@@ -91,11 +93,14 @@ function AppShell() {
       <Sidebar view={view} setView={setView} />
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 border-b border-border sticky top-0 z-10 bg-background/80 backdrop-blur-md flex items-center px-8">
-          <span className="text-sm font-medium">{current?.label}</span>
-          {status === "running" && (
-            <span className="ml-3 text-[11px] font-mono text-primary">génération · {percent}%</span>
-          )}
+        <header className="h-14 border-b border-border sticky top-0 z-10 bg-background/80 backdrop-blur-md flex items-center justify-between px-8">
+          <div className="flex items-center">
+            <span className="text-sm font-medium">{current?.label}</span>
+            {status === "running" && (
+              <span className="ml-3 text-[11px] font-mono text-primary">génération · {percent}%</span>
+            )}
+          </div>
+          <ThemeToggle />
         </header>
         {status === "running" && (
           <div className="h-px bg-border">
@@ -123,8 +128,10 @@ function AppShell() {
 
 export default function App() {
   return (
-    <JobProvider>
-      <AppShell />
-    </JobProvider>
+    <ThemeProvider>
+      <JobProvider>
+        <AppShell />
+      </JobProvider>
+    </ThemeProvider>
   );
 }

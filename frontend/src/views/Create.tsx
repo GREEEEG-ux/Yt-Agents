@@ -14,10 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useJob } from "@/lib/JobContext";
-import { PageHeader } from "@/components/PageHeader";
 import { SubtitlePreview } from "@/components/SubtitlePreview";
 import { VoicePicker } from "@/components/VoicePicker";
 import { MovieTitleInput } from "@/components/MovieTitleInput";
+import { StepShell, OptionGrid, OptionCard } from "@/components/StepShell";
+import { Sparkles, PenLine, Clapperboard, Library, Link2 } from "lucide-react";
 import {
   type GenerateMode,
   type GenerateRequest,
@@ -41,9 +42,20 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+const MODE_OPTIONS: { id: GenerateMode; title: string; subtitle: string; icon: typeof Sparkles }[] = [
+  { id: "free", title: "Sujet libre", subtitle: "L'IA choisit un sujet accrocheur pour toi.", icon: Sparkles },
+  { id: "topic", title: "Sujet imposé", subtitle: "Tu donnes le sujet, l'IA écrit le script.", icon: PenLine },
+  { id: "film", title: "Analyse de film / série", subtitle: "Commentaire original sur une œuvre.", icon: Clapperboard },
+  { id: "recap", title: "Résumé en plusieurs parties", subtitle: "Récap d'un film/série découpé en Shorts.", icon: Library },
+  { id: "clip", title: "Auto-clip", subtitle: "Depuis un lien ou un fichier vidéo.", icon: Link2 },
+];
+
+type Step = "mode" | "options" | "review";
+
 export function Create() {
   const job = useJob();
 
+  const [step, setStep] = useState<Step>("mode");
   const [mode, setMode] = useState<GenerateMode>("free");
   const [topic, setTopic] = useState("");
   const [film, setFilm] = useState("");
@@ -146,30 +158,106 @@ export function Create() {
     await job.startJob(req, file);
   }
 
+  if (step === "mode") {
+    return (
+      <section className="max-w-2xl mx-auto py-6">
+        <StepShell eyebrow="Studio de création" title="Que veux-tu créer ?" subtitle="Choisis un mode — tu pourras revenir en arrière.">
+          <OptionGrid>
+            {MODE_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              return (
+                <OptionCard
+                  key={opt.id}
+                  icon={<Icon className="size-5" strokeWidth={1.75} />}
+                  title={opt.title}
+                  subtitle={opt.subtitle}
+                  selected={mode === opt.id}
+                  onClick={() => {
+                    setMode(opt.id);
+                    setStep("options");
+                  }}
+                />
+              );
+            })}
+          </OptionGrid>
+        </StepShell>
+      </section>
+    );
+  }
+
+  if (step === "review") {
+    const modeLabel = MODE_OPTIONS.find((m) => m.id === mode)?.title ?? mode;
+    const subjectLine =
+      mode === "topic" ? topic : mode === "film" || mode === "recap" ? film : mode === "clip" ? clipUrl || "Fichier local" : "Choisi par l'IA";
+
+    return (
+      <section className="max-w-lg mx-auto py-6">
+        <StepShell
+          eyebrow="Dernière étape"
+          title="Prêt à générer ?"
+          subtitle="Vérifie tes choix, puis lance la génération."
+          badge={modeLabel}
+          onBack={() => setStep("options")}
+          backLabel="Modifier les options"
+        >
+          <Card className="p-5 gap-0 divide-y divide-border shadow-none">
+            <div className="flex items-center justify-between py-2.5 text-[13px]">
+              <span className="text-muted-foreground">Mode</span>
+              <span className="font-medium">{modeLabel}</span>
+            </div>
+            <div className="flex items-center justify-between py-2.5 text-[13px]">
+              <span className="text-muted-foreground">Sujet / source</span>
+              <span className="font-medium truncate max-w-[220px]">{subjectLine || "—"}</span>
+            </div>
+            {mode === "recap" && (
+              <div className="flex items-center justify-between py-2.5 text-[13px]">
+                <span className="text-muted-foreground">Parties</span>
+                <span className="font-medium">{numParts}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between py-2.5 text-[13px]">
+              <span className="text-muted-foreground">Modèle IA</span>
+              <span className="font-medium">{llmEngine}</span>
+            </div>
+            <div className="flex items-center justify-between py-2.5 text-[13px]">
+              <span className="text-muted-foreground">Publication</span>
+              <span className="font-medium">{previewFirst ? "Prévisualiser avant" : "Directe"}</span>
+            </div>
+          </Card>
+
+          <Button className="w-full mt-5" disabled={running} onClick={startGeneration}>
+            {running ? "Génération en cours..." : "Finish — Lancer la génération"}
+          </Button>
+          <p className="text-[11px] text-muted-foreground mt-3 text-center">
+            Une fois lancée, tu peux naviguer librement — la génération continue en arrière-plan.
+          </p>
+
+          {job.log.length > 0 && (
+            <div className="mt-6 text-left">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Journal</div>
+              <Card className="p-4 h-48 overflow-y-auto font-mono text-xs text-muted-foreground gap-1 shadow-none">
+                {job.log.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </Card>
+            </div>
+          )}
+        </StepShell>
+      </section>
+    );
+  }
+
   return (
     <section className="max-w-lg">
-      <PageHeader
-        title="Nouvelle génération"
-        intro="Choisis un mode, règle les options, prévisualise avant de publier."
-      />
-
-      <Card className="p-6 gap-5 shadow-none">
-        <div className="space-y-1.5">
-          <FieldLabel>Mode</FieldLabel>
-          <Select value={mode} onValueChange={(v) => setMode(v as GenerateMode)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="free">Sujet libre</SelectItem>
-              <SelectItem value="topic">Sujet imposé</SelectItem>
-              <SelectItem value="film">Analyse de film / série</SelectItem>
-              <SelectItem value="recap">Résumé de film/série en plusieurs parties</SelectItem>
-              <SelectItem value="clip">Auto-clip depuis un lien / fichier</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
+      <StepShell
+        eyebrow="Studio de création"
+        title="Réglages"
+        subtitle="Configure ta génération, puis passe à l'étape suivante."
+        badge={MODE_OPTIONS.find((m) => m.id === mode)?.title}
+        onBack={() => setStep("mode")}
+        backLabel="Changer de mode"
+      >
+      <Card className="p-6 gap-5 shadow-none text-left">
         <div className="space-y-1.5">
           <FieldLabel>Modèle IA (script)</FieldLabel>
           <Select value={llmEngine} onValueChange={(v) => setLlmEngine(v as LlmEngine)}>
@@ -512,26 +600,11 @@ export function Create() {
           <Switch checked={previewFirst} onCheckedChange={setPreviewFirst} />
         </div>
 
-        <Button className="w-full" disabled={running} onClick={startGeneration}>
-          {running ? "Génération en cours..." : "Lancer la génération"}
+        <Button className="w-full" onClick={() => setStep("review")}>
+          Continuer
         </Button>
-        {running && (
-          <p className="text-[11px] text-muted-foreground text-center">
-            Tu peux naviguer librement, la génération continue en arrière-plan.
-          </p>
-        )}
       </Card>
-
-      {job.log.length > 0 && (
-        <div className="mt-6">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Journal</div>
-          <Card className="p-4 h-52 overflow-y-auto font-mono text-xs text-muted-foreground gap-1">
-            {job.log.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </Card>
-        </div>
-      )}
+      </StepShell>
     </section>
   );
 }
