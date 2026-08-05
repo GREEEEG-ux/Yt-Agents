@@ -19,6 +19,8 @@ import { VoicePicker } from "@/components/VoicePicker";
 import { MovieTitleInput } from "@/components/MovieTitleInput";
 import { StepShell, OptionGrid, OptionCard } from "@/components/StepShell";
 import { SourceInsight } from "@/components/SourceInsight";
+import { extractYoutubeId } from "@/lib/youtube";
+import { api } from "@/lib/api";
 import { Sparkles, PenLine, Clapperboard, Library, Link2 } from "lucide-react";
 import {
   type GenerateMode,
@@ -72,16 +74,44 @@ export function Create({
   const [clipUrl, setClipUrl] = useState("");
   const [clipMine, setClipMine] = useState(false);
 
-  // Vidéo choisie depuis "Chaîne YouTube" -> préremplit l'auto-clip (c'est ta propre chaîne).
+  // Vidéo choisie depuis "Chaîne YouTube" / "YouTube" -> reste sur le choix de
+  // mode, mais garde la référence en attente. Le mode cliqué décide comment
+  // l'utiliser (auto-clip = source directe, autres = titre en inspiration).
+  const [pendingReferenceUrl, setPendingReferenceUrl] = useState<string | null>(null);
+  const [referenceTitle, setReferenceTitle] = useState<string | null>(null);
+
   useEffect(() => {
     if (!initialSourceUrl) return;
-    setMode("clip");
-    setClipUrl(initialSourceUrl);
-    setClipMine(true);
-    setStep("options");
+    setPendingReferenceUrl(initialSourceUrl);
+    setReferenceTitle(null);
+    setStep("mode");
+
+    const videoId = extractYoutubeId(initialSourceUrl);
+    if (videoId) {
+      api.getVideoInfo(videoId).then((info) => {
+        if (!info.error) setReferenceTitle(info.title);
+      });
+    }
     onConsumeInitialSourceUrl?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSourceUrl]);
+
+  function selectMode(id: GenerateMode) {
+    setMode(id);
+    if (pendingReferenceUrl) {
+      if (id === "clip") {
+        setClipUrl(pendingReferenceUrl);
+        setClipMine(true);
+      } else if (id === "topic") {
+        setTopic(referenceTitle ?? "");
+      } else if (id === "film" || id === "recap") {
+        setFilm(referenceTitle ?? "");
+      }
+      setPendingReferenceUrl(null);
+      setReferenceTitle(null);
+    }
+    setStep("options");
+  }
 
   const [clipMode, setClipMode] = useState<ClipMode>("manual");
   const [clipStart, setClipStart] = useState(0);
@@ -180,7 +210,25 @@ export function Create({
   if (step === "mode") {
     return (
       <section className="max-w-2xl mx-auto py-6">
-        <StepShell eyebrow="Studio de création" title="Que veux-tu créer ?" subtitle="Choisis un mode — tu pourras revenir en arrière.">
+        <StepShell
+          eyebrow="Studio de création"
+          title="Que veux-tu créer ?"
+          subtitle={
+            pendingReferenceUrl
+              ? `Vidéo de référence prête — choisis comment l'utiliser.`
+              : "Choisis un mode — tu pourras revenir en arrière."
+          }
+        >
+          {pendingReferenceUrl && (
+            <div className="mb-5 rounded-lg border border-border bg-card p-3 text-[12px]">
+              <span className="text-muted-foreground">Basé sur : </span>
+              <span className="font-medium">{referenceTitle ?? "chargement..."}</span>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Auto-clip réutilise directement cette vidéo comme source. Les autres modes reprennent son titre
+                comme inspiration ; « Sujet libre » ignore la référence.
+              </p>
+            </div>
+          )}
           <OptionGrid>
             {MODE_OPTIONS.map((opt) => {
               const Icon = opt.icon;
@@ -191,10 +239,7 @@ export function Create({
                   title={opt.title}
                   subtitle={opt.subtitle}
                   selected={mode === opt.id}
-                  onClick={() => {
-                    setMode(opt.id);
-                    setStep("options");
-                  }}
+                  onClick={() => selectMode(opt.id)}
                 />
               );
             })}
